@@ -4,8 +4,8 @@
 	"longName": "Futura Weather Redux",
 	"capabilities": [ "location", "configurable" ],
 	"companyName": "Kyle Lacy",
-	"versionCode": 2,
-	"versionLabel": "2.0.0",
+	"versionCode": 1,
+	"versionLabel": "1.0.0",
 	"watchapp": {
 		"watchface": true
 	},
