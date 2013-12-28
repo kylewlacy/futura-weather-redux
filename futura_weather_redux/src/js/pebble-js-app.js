@@ -76,12 +76,10 @@ function setPreferences() {
 
 
 Pebble.addEventListener("ready", function(e) {
-	locationWatcher = window.navigator.geolocation.watchPosition(locationSuccess, locationError, locationOptions);
 });
 
 Pebble.addEventListener("appmessage", function(e) {
 	if(e.payload["setPreferences"] == 1) {
-		console.log("Received preferences");
 		temp_format = e.payload["tempPreference"];
 		weather_update_frequency = e.payload["weatherUpdatePreference"];
 	}
@@ -89,12 +87,7 @@ Pebble.addEventListener("appmessage", function(e) {
 		window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
 	}
 	else {
-		console.warn("Received message, but don't know what to do");
-		console.warn("Payload: {")
-		for(var p in e.payload) {
-			console.warn("  " + p + ": " + e.payload[p]);
-		}
-		console.warn("}");
+		console.warn("Received unknown app message");
 	}
 });
 
