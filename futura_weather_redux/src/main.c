@@ -2,9 +2,6 @@
 
 static Window *window;
 
-#define TIME_FRAME      (GRect(0, 0, 144, 90))
-#define DATE_FRAME      (GRect(0, 60, 144, 30))
-
 GFont futura_18;
 GFont futura_25;
 GFont futura_28;
@@ -293,17 +290,17 @@ static void window_load(Window *window) {
     futura_40 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FUTURA_40));
     futura_53 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FUTURA_CONDENSED_53));
     
-    time_layer = text_layer_create(TIME_FRAME);
+    time_layer = text_layer_create(GRect(0, 2, 144, 168-6));
     text_layer_set_text_alignment(time_layer, GTextAlignmentCenter);
-    text_layer_set_background_color(time_layer, GColorWhite);
-    text_layer_set_text_color(time_layer, GColorBlack);
+    text_layer_set_background_color(time_layer, GColorClear);
+    text_layer_set_text_color(time_layer, GColorWhite);
     text_layer_set_font(time_layer, futura_53);
     layer_add_child(window_layer, text_layer_get_layer(time_layer));
     
-    date_layer = text_layer_create(DATE_FRAME);
+    date_layer = text_layer_create(GRect(1, 74, 144, 168-62));
     text_layer_set_text_alignment(date_layer, GTextAlignmentCenter);
-    text_layer_set_background_color(date_layer, GColorWhite);
-    text_layer_set_text_color(date_layer, GColorBlack);
+    text_layer_set_background_color(date_layer, GColorClear);
+    text_layer_set_text_color(date_layer, GColorWhite);
     text_layer_set_font(date_layer, futura_18);
     layer_add_child(window_layer, text_layer_get_layer(date_layer));
     
@@ -315,7 +312,7 @@ static void window_load(Window *window) {
     
     temperature_layer = text_layer_create(GRect(70, 19, 72, 80));
     text_layer_set_text_color(temperature_layer, GColorWhite);
-    text_layer_set_background_color(temperature_layer, GColorBlack);
+    text_layer_set_background_color(temperature_layer, GColorClear);
     text_layer_set_font(temperature_layer, futura_40);
     text_layer_set_text_alignment(temperature_layer, GTextAlignmentRight);
     layer_add_child(weather_layer, text_layer_get_layer(temperature_layer));
