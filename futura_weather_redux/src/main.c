@@ -20,9 +20,12 @@ static BitmapLayer *icon_layer;
 static GBitmap *icon_bitmap = NULL;
 
 static time_t last_weather_update = 0;
-static time_t weather_update_frequency = 10*60;
 
-static TempFormat temp_format = TEMP_FORMAT_CELCIUS;
+
+static Preferences prefs = {
+	.temp_format = TEMP_FORMAT_CELCIUS,
+	.weather_update_frequency = 10*60
+};
 
 
 
@@ -31,16 +34,14 @@ static TempFormat temp_format = TEMP_FORMAT_CELCIUS;
 
 void load_preferences() {
 	if(persist_exists(TEMP_PREFERENCE_KEY))
-		temp_format = persist_read_int(TEMP_PREFERENCE_KEY);
+		prefs.temp_format = persist_read_int(TEMP_PREFERENCE_KEY);
 	if(persist_exists(WEATHER_UPDATE_PREFERENCE_KEY))
-		weather_update_frequency = persist_read_int(WEATHER_UPDATE_PREFERENCE_KEY);
-	
-	APP_LOG(APP_LOG_LEVEL_INFO, "Weather update frequency is %d", (int)weather_update_frequency);
+		prefs.weather_update_frequency = persist_read_int(WEATHER_UPDATE_PREFERENCE_KEY);
 }
 
 void save_preferences() {
-	status_t save_temp = persist_write_int(TEMP_PREFERENCE_KEY, temp_format);
-	status_t save_weather_update = persist_write_int(WEATHER_UPDATE_PREFERENCE_KEY, (int)weather_update_frequency);
+	status_t save_temp = persist_write_int(TEMP_PREFERENCE_KEY, prefs.temp_format);
+	status_t save_weather_update = persist_write_int(WEATHER_UPDATE_PREFERENCE_KEY, (int)prefs.weather_update_frequency);
 	
 	
 	// TODO: Retry saving if failed
@@ -57,7 +58,7 @@ void send_preferences() {
 	Tuplet request = TupletInteger(SET_PREFERENCES_KEY, 1);
 	dict_write_tuplet(iter, &request);
 	
-	Tuplet temp = TupletInteger(TEMP_PREFERENCE_KEY, temp_format);
+	Tuplet temp = TupletInteger(TEMP_PREFERENCE_KEY, prefs.temp_format);
 	dict_write_tuplet(iter, &temp);
 	
 	app_message_outbox_send();
@@ -66,9 +67,8 @@ void send_preferences() {
 
 
 bool need_weather_update() {
-    time_t now = time(NULL);
-	
-    return last_weather_update && (now - last_weather_update >= weather_update_frequency);
+	time_t now = time(NULL);
+    return last_weather_update && (now - last_weather_update >= prefs.weather_update_frequency);
 }
 
 void request_weather_update() {
@@ -228,12 +228,12 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 		Tuple *temp_preference = dict_find(received, TEMP_PREFERENCE_KEY);
 		Tuple *weather_update_preference = dict_find(received, WEATHER_UPDATE_PREFERENCE_KEY);
 		
-		if(temp_preference && (temp_preference->value->int32 != temp_format)) {
-			temp_format = temp_preference->value->int32;
+		if(temp_preference && (temp_preference->value->int32 != prefs.temp_format)) {
+			prefs.temp_format = temp_preference->value->int32;
 			request_weather_update();
 		}
-		if(weather_update_preference && (weather_update_preference->value->int32 != (int)weather_update_frequency)) {
-			weather_update_frequency = weather_update_preference->value->int32;
+		if(weather_update_preference && (weather_update_preference->value->int32 != (int)prefs.weather_update_frequency)) {
+			prefs.weather_update_frequency = weather_update_preference->value->int32;
 		}
 		
 		save_preferences();

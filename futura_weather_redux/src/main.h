@@ -19,6 +19,11 @@ typedef enum {
 	TEMP_FORMAT_FAHRENHEIT = 2
 } TempFormat;
 
+typedef struct {
+	TempFormat temp_format;
+	time_t weather_update_frequency;
+} Preferences;
+
 
 
 void load_preferences();
