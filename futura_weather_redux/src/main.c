@@ -54,8 +54,6 @@ void update_weather_info(Weather *weather) {
             gbitmap_destroy(icon_bitmap);
         icon_bitmap = gbitmap_create_with_resource(get_resource_for_weather_conditions(weather->conditions));
         bitmap_layer_set_bitmap(icon_layer, icon_bitmap);
-		
-		weather->last_update_time = time(NULL);
     }
 }
 
@@ -249,7 +247,13 @@ void window_load(Window *window) {
     layer_add_child(weather_layer, text_layer_get_layer(temperature_layer));
     
     layer_add_child(window_layer, weather_layer);
+	
+	// Draw weather info if the cache is recent enough
+	if(!weather_needs_update(weather, prefs->weather_update_frequency))
+		update_weather_info(weather);
     
+	
+	
 	tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
     
     time_t then = time(NULL);
@@ -297,6 +301,7 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
         text_layer_set_text(date_layer, date_text);
     }
     
+	// TOOD: Tell don't ask
     if(weather_needs_update(weather, prefs->weather_update_frequency))
         weather_request_update();
 }

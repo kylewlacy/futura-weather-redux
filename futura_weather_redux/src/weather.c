@@ -4,14 +4,32 @@
 
 bool force_update = false;
 
-Weather* weather_create() {
+Weather* weather_load_cache() {
 	static Weather weather = {
 		.last_update_time = 0,
-		.temperature = -461,				// Below absolute zero in Kelvin, Celsius, Fahrenheit, Rankine, Delisle, Newton, Rèaumur, and Rømer
+		.temperature = -46100,				// Below absolute zero in Kelvin, Celsius, Fahrenheit, Rankine, Delisle, Newton, Rèaumur, and Rømer
 		.conditions = 0
 	};
+	
+	if(persist_exists(WEATHER_CACHE_LAST_UPDATE_PERSIST_KEY))
+		weather.last_update_time = persist_read_int(WEATHER_CACHE_LAST_UPDATE_PERSIST_KEY);
+	if(persist_exists(WEATHER_CACHE_TEMPERATURE_PERSIST_KEY))
+		weather.temperature = persist_read_int(WEATHER_CACHE_TEMPERATURE_PERSIST_KEY);
+	if(persist_exists(WEATHER_CACHE_CONDITIONS_PERSIST_KEY))
+		weather.conditions = persist_read_int(WEATHER_CACHE_CONDITIONS_PERSIST_KEY);
+	
 	return &weather;
 }
+
+bool weather_save_cache(Weather *weather) {
+	status_t save_last_update = persist_write_int(WEATHER_CACHE_LAST_UPDATE_PERSIST_KEY, (int)weather->last_update_time);
+	status_t save_temperature = persist_write_int(WEATHER_CACHE_TEMPERATURE_PERSIST_KEY, weather->temperature);
+	status_t save_conditions = persist_write_int(WEATHER_CACHE_CONDITIONS_PERSIST_KEY, weather->conditions);
+	
+	return save_last_update >= 0 && save_temperature >= 0 && save_conditions >= 0;
+}
+
+
 
 bool weather_needs_update(Weather *weather, time_t update_freq) {
 	time_t now = time(NULL);
@@ -37,7 +55,14 @@ bool weather_set(Weather *weather, DictionaryIterator *iter) {
 	if(temperature)
 		weather->temperature = temperature->value->int32;
 	
-	return conditions || temperature;
+	if(conditions || temperature) {
+		time_t now = time(NULL);
+		weather->last_update_time = now;
+		weather_save_cache(weather);
+		
+		return true;
+	}
+	return false;
 }
 
 
