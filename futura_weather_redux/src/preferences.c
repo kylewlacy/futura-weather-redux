@@ -9,17 +9,17 @@ Preferences* preferences_load() {
 		.weather_update_frequency = 10*60
 	};
 	
-	if(persist_exists(TEMP_PREFERENCE_KEY))
-		prefs.temp_format = persist_read_int(TEMP_PREFERENCE_KEY);
-	if(persist_exists(WEATHER_UPDATE_PREFERENCE_KEY))
-		prefs.weather_update_frequency = persist_read_int(WEATHER_UPDATE_PREFERENCE_KEY);
+	if(persist_exists(PREF_TEMP_FORMAT_PERSIST_KEY))
+		prefs.temp_format = persist_read_int(PREF_TEMP_FORMAT_PERSIST_KEY);
+	if(persist_exists(PREF_WEATHER_UPDATE_FREQ_PERSIST_KEY))
+		prefs.weather_update_frequency = persist_read_int(PREF_WEATHER_UPDATE_FREQ_PERSIST_KEY);
 	
 	return &prefs;
 }
 
 bool preferences_save(Preferences *prefs) {
-	status_t save_temp = persist_write_int(TEMP_PREFERENCE_KEY, prefs->temp_format);
-	status_t save_weather_update = persist_write_int(WEATHER_UPDATE_PREFERENCE_KEY, (int)prefs->weather_update_frequency);
+	status_t save_temp = persist_write_int(PREF_TEMP_FORMAT_PERSIST_KEY, prefs->temp_format);
+	status_t save_weather_update = persist_write_int(PREF_WEATHER_UPDATE_FREQ_PERSIST_KEY, (int)prefs->weather_update_frequency);
 	
 	return save_temp >= 0 && save_weather_update >= 0;
 }
