@@ -2,7 +2,7 @@
 	"uuid": "befe1765-6aee-4d85-a865-12ac989ee924",
 	"shortName": "Futura Weather",
 	"longName": "Futura Weather Redux",
-	"capabilities": [ "location" ],
+	"capabilities": [ "location", "configurable" ],
 	"companyName": "Kyle Lacy",
 	"versionCode": 2,
 	"versionLabel": "2.0.0",
@@ -11,8 +11,13 @@
 	},
 	"appKeys": {
 		"requestWeather": 1,
-		"temperature": 2,
-		"conditions": 3
+		"setWeather": 2,
+		"temperature": 3,
+		"conditions": 4,
+		"requestPreferences": 5,
+		"setPreferences": 6,
+		"tempPreference": 7,
+		"weatherUpdatePreference": 8
 	},
 	"resources": {
 		"media": [

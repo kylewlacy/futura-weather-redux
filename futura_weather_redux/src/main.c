@@ -19,25 +19,37 @@ static BitmapLayer *icon_layer;
 static GBitmap *icon_bitmap = NULL;
 
 static time_t last_weather_update = 0;
-static time_t weather_update_frequency = 60*15;
+static time_t weather_update_frequency = 10*60;
 
-enum WeatherKey {
-    WEATHER_TEMPERATURE_KEY = 2,
-    WEATHER_CONDITIONS_KEY = 3
+enum AppMessageKey {
+	REQUEST_WEATHER_KEY = 1,
+	SET_WEATHER_KEY = 2,
+    WEATHER_TEMPERATURE_KEY = 3,
+    WEATHER_CONDITIONS_KEY = 4,
+	REQUEST_PREFERENCES_KEY = 5,
+	SET_PREFERENCES_KEY = 6,
+	TEMP_PREFERENCE_KEY = 7,
+	WEATHER_UPDATE_PREFERENCE_KEY = 8
 };
+
+typedef enum {
+	TEMP_FORMAT_CELCIUS = 1,
+	TEMP_FORMAT_FAHRENHEIT = 2
+} TempFormat;
+static TempFormat temp_format = TEMP_FORMAT_CELCIUS;
 
 
 bool need_weather_update() {
     time_t now = time(NULL);
 	
-    return last_weather_update && now - last_weather_update >= weather_update_frequency;
+    return last_weather_update && (now - last_weather_update >= weather_update_frequency);
 }
 
 static uint32_t get_resource_for_conditions(uint32_t conditions) {
 	bool is_day = conditions >= 1000;
     switch((conditions - (conditions % 100)) % 1000) {
         case 0:
-            APP_LOG(APP_LOG_LEVEL_DEBUG, "%s", "Error getting data");
+            APP_LOG(APP_LOG_LEVEL_DEBUG, "Error getting data (conditions returned %d)", (int)conditions);
             return RESOURCE_ID_ICON_CLOUD_ERROR;
         case 200:
             return RESOURCE_ID_ICON_THUNDER;
@@ -120,14 +132,73 @@ static void request_weather_update() {
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
     
-    Tuplet request = TupletInteger(1, 1);
+    Tuplet request = TupletInteger(REQUEST_WEATHER_KEY, 1);
     dict_write_tuplet(iter, &request);
     
     app_message_outbox_send();
 }
 
+
+
+static void handle_tick(struct tm *now, TimeUnits units_changed) {
+    if(units_changed & MINUTE_UNIT) {
+        static char time_text[6];
+		strftime(time_text, 6, clock_is_24h_style() ? "%H:%M" : "%I:%M", now);
+		
+        text_layer_set_text(time_layer, time_text);
+    }
+    
+    if(units_changed & DAY_UNIT) {
+        static char date_text[11];
+        strftime(date_text, 11, "%a %b %d",  now);
+        text_layer_set_text(date_layer, date_text);
+    }
+    
+    if(need_weather_update()) {
+		APP_LOG(APP_LOG_LEVEL_INFO, "[%01d:%01d:%01d] Updating weather", now->tm_hour, now->tm_min, now->tm_sec);
+        request_weather_update();
+	}
+}
+
+
+
+static void load_preferences() {
+	if(persist_exists(TEMP_PREFERENCE_KEY))
+		temp_format = persist_read_int(TEMP_PREFERENCE_KEY);
+	if(persist_exists(WEATHER_UPDATE_PREFERENCE_KEY))
+		weather_update_frequency = persist_read_int(WEATHER_UPDATE_PREFERENCE_KEY);
+	
+	APP_LOG(APP_LOG_LEVEL_INFO, "Weather update frequency is %d", (int)weather_update_frequency);
+}
+
+static void save_preferences() {
+	status_t save_temp = persist_write_int(TEMP_PREFERENCE_KEY, temp_format);
+	status_t save_weather_update = persist_write_int(WEATHER_UPDATE_PREFERENCE_KEY, (int)weather_update_frequency);
+	
+	
+	// TODO: Retry saving if failed
+	if(save_temp < 0)
+		APP_LOG(APP_LOG_LEVEL_ERROR, "Saving temperature preference returned %d", (int)save_temp);
+	if(save_weather_update < 0 )
+		APP_LOG(APP_LOG_LEVEL_ERROR, "Saving weather update preference returned %d", (int)save_weather_update);
+	
+}
+
+static void send_preferences() {
+	DictionaryIterator *iter;
+	app_message_outbox_begin(&iter);
+	
+	Tuplet request = TupletInteger(SET_PREFERENCES_KEY, 1);
+	dict_write_tuplet(iter, &request);
+	
+	Tuplet temp = TupletInteger(TEMP_PREFERENCE_KEY, temp_format);
+	dict_write_tuplet(iter, &temp);
+	
+	app_message_outbox_send();
+}
+
 static void update_weather_info(int conditions, int temperature) {
-    if(temperature > -274) {
+    if(conditions % 1000) {
         static char temperature_text[8];
         snprintf(temperature_text, 8, "%d\u00B0", temperature);
         text_layer_set_text(temperature_layer, temperature_text);
@@ -164,41 +235,50 @@ void out_sent_handler(DictionaryIterator *sent, void *context) {
 }
 
 void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Sending message failed (reason: %d)", (int)reason);
 }
 
 void in_received_handler(DictionaryIterator *received, void *context) {
-    Tuple *conditions = dict_find(received, WEATHER_CONDITIONS_KEY);
-    Tuple *temperature = dict_find(received, WEATHER_TEMPERATURE_KEY);
-    if(conditions && temperature) {
-        update_weather_info((int)conditions->value->int32, (int)temperature->value->int32);
-    }
-    else {
-        APP_LOG(APP_LOG_LEVEL_WARNING, "No temperature or weather conditions found in response");
-    }
+	Tuple *set_weather = dict_find(received, SET_WEATHER_KEY);
+	Tuple *request_preferences = dict_find(received, REQUEST_PREFERENCES_KEY);
+	Tuple *set_preferences = dict_find(received, SET_PREFERENCES_KEY);
+	
+	if(set_weather) {
+		Tuple *conditions = dict_find(received, WEATHER_CONDITIONS_KEY);
+		Tuple *temperature = dict_find(received, WEATHER_TEMPERATURE_KEY);
+		
+		if(conditions && temperature)
+			update_weather_info((int)conditions->value->int32, (int)temperature->value->int32);
+		else
+			APP_LOG(APP_LOG_LEVEL_WARNING, "No temperature or weather conditions found in weather response");
+	}
+	
+	if(request_preferences) {
+		send_preferences();
+	}
+	
+	if(set_preferences) {
+		Tuple *temp_preference = dict_find(received, TEMP_PREFERENCE_KEY);
+		Tuple *weather_update_preference = dict_find(received, WEATHER_UPDATE_PREFERENCE_KEY);
+		
+		if(temp_preference && (temp_preference->value->int32 != temp_format)) {
+			temp_format = temp_preference->value->int32;
+			request_weather_update();
+		}
+		if(weather_update_preference && (weather_update_preference->value->int32 != (int)weather_update_frequency)) {
+			weather_update_frequency = weather_update_preference->value->int32;
+		}
+		
+		save_preferences();
+	}
 }
 
 void in_dropped_handler(AppMessageResult reason, void *context) {
-    
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Received message dropped (reason: %d)", (int)reason);
 }
 
 
 
-static void handle_tick(struct tm *now, TimeUnits units_changed) {
-    if(units_changed & MINUTE_UNIT) {
-        static char time_text[6];
-        strftime(time_text, 6, "%H:%M", now);
-        text_layer_set_text(time_layer, time_text);
-    }
-    
-    if(units_changed & DAY_UNIT) {
-        static char date_text[11];
-        strftime(date_text, 11, "%a %b %d",  now);
-        text_layer_set_text(date_layer, date_text);
-    }
-    
-    if(need_weather_update())
-        request_weather_update();
-}
 
 static void window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
@@ -280,9 +360,11 @@ static void init(void) {
     app_message_register_outbox_sent(out_sent_handler);
     app_message_register_outbox_failed(out_failed_handler);
     
-    const int inbound_size = 64;
-    const int outbound_size = 64;
+    const uint32_t inbound_size = 64;
+    const uint32_t outbound_size = 64;
     app_message_open(inbound_size, outbound_size);
+	
+	load_preferences();
     
     const bool animated = true;
     window_stack_push(window, animated);
