@@ -101,6 +101,7 @@ Pebble.addEventListener("ready", function(e) {
 Pebble.addEventListener("appmessage", function(e) {
 	if(e.payload["setPreferences"] == 1) {
 		temp_format = e.payload["tempPreference"];
+		weather_update_frequency = e.payload["weatherUpdatePreference"];
 	}
 	else if(e.payload["requestWeather"] == 1) {
 		window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);

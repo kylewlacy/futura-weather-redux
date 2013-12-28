@@ -34,6 +34,9 @@ void preferences_send(Preferences *prefs) {
 	Tuplet temp_format = TupletInteger(TEMP_PREFERENCE_KEY, prefs->temp_format);
 	dict_write_tuplet(iter, &temp_format);
 	
+	Tuplet weather_update_frequency = TupletInteger(WEATHER_UPDATE_PREFERENCE_KEY, (int)prefs->weather_update_frequency);
+	dict_write_tuplet(iter, &weather_update_frequency);
+	
 	app_message_outbox_send();
 }
 

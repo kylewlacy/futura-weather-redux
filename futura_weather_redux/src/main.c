@@ -298,8 +298,6 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
         text_layer_set_text(date_layer, date_text);
     }
     
-    if(weather_needs_update(weather, prefs->weather_update_frequency)) {
-		APP_LOG(APP_LOG_LEVEL_INFO, "[%01d:%01d:%01d] Updating weather", now->tm_hour, now->tm_min, now->tm_sec);
+    if(weather_needs_update(weather, prefs->weather_update_frequency))
         weather_request_update();
-	}
 }
