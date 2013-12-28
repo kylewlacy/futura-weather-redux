@@ -1,4 +1,5 @@
 #include "pebble.h"
+#include "main.h"
 
 static Window *window;
 
@@ -21,22 +22,47 @@ static GBitmap *icon_bitmap = NULL;
 static time_t last_weather_update = 0;
 static time_t weather_update_frequency = 10*60;
 
-enum AppMessageKey {
-	REQUEST_WEATHER_KEY = 1,
-	SET_WEATHER_KEY = 2,
-    WEATHER_TEMPERATURE_KEY = 3,
-    WEATHER_CONDITIONS_KEY = 4,
-	REQUEST_PREFERENCES_KEY = 5,
-	SET_PREFERENCES_KEY = 6,
-	TEMP_PREFERENCE_KEY = 7,
-	WEATHER_UPDATE_PREFERENCE_KEY = 8
-};
-
-typedef enum {
-	TEMP_FORMAT_CELCIUS = 1,
-	TEMP_FORMAT_FAHRENHEIT = 2
-} TempFormat;
 static TempFormat temp_format = TEMP_FORMAT_CELCIUS;
+
+
+
+
+
+
+void load_preferences() {
+	if(persist_exists(TEMP_PREFERENCE_KEY))
+		temp_format = persist_read_int(TEMP_PREFERENCE_KEY);
+	if(persist_exists(WEATHER_UPDATE_PREFERENCE_KEY))
+		weather_update_frequency = persist_read_int(WEATHER_UPDATE_PREFERENCE_KEY);
+	
+	APP_LOG(APP_LOG_LEVEL_INFO, "Weather update frequency is %d", (int)weather_update_frequency);
+}
+
+void save_preferences() {
+	status_t save_temp = persist_write_int(TEMP_PREFERENCE_KEY, temp_format);
+	status_t save_weather_update = persist_write_int(WEATHER_UPDATE_PREFERENCE_KEY, (int)weather_update_frequency);
+	
+	
+	// TODO: Retry saving if failed
+	if(save_temp < 0)
+		APP_LOG(APP_LOG_LEVEL_ERROR, "Saving temperature preference returned %d", (int)save_temp);
+	if(save_weather_update < 0 )
+		APP_LOG(APP_LOG_LEVEL_ERROR, "Saving weather update preference returned %d", (int)save_weather_update);
+}
+
+void send_preferences() {
+	DictionaryIterator *iter;
+	app_message_outbox_begin(&iter);
+	
+	Tuplet request = TupletInteger(SET_PREFERENCES_KEY, 1);
+	dict_write_tuplet(iter, &request);
+	
+	Tuplet temp = TupletInteger(TEMP_PREFERENCE_KEY, temp_format);
+	dict_write_tuplet(iter, &temp);
+	
+	app_message_outbox_send();
+}
+
 
 
 bool need_weather_update() {
@@ -45,7 +71,49 @@ bool need_weather_update() {
     return last_weather_update && (now - last_weather_update >= weather_update_frequency);
 }
 
-static uint32_t get_resource_for_conditions(uint32_t conditions) {
+void request_weather_update() {
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
+    
+    Tuplet request = TupletInteger(REQUEST_WEATHER_KEY, 1);
+    dict_write_tuplet(iter, &request);
+    
+    app_message_outbox_send();
+}
+
+void update_weather_info(int conditions, int temperature) {
+    if(conditions % 1000) {
+        static char temperature_text[8];
+        snprintf(temperature_text, 8, "%d\u00B0", temperature);
+        text_layer_set_text(temperature_layer, temperature_text);
+        
+        if(10 <= temperature && temperature <= 99) {
+            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+3, 72, 80));
+            text_layer_set_font(temperature_layer, futura_35);
+        }
+        else if((0 <= temperature && temperature <= 9) || (-9 <= temperature && temperature <= -1)){
+            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19, 72, 80));
+            text_layer_set_font(temperature_layer, futura_40);
+        }
+        else if((100 <= temperature) || (-99 <= temperature && temperature <= -10)) {
+            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+3, 72, 80));
+            text_layer_set_font(temperature_layer, futura_28);
+        }
+        else {
+            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+6, 72, 80));
+            text_layer_set_font(temperature_layer, futura_25);
+        }
+        
+        if(icon_bitmap)
+            gbitmap_destroy(icon_bitmap);
+        icon_bitmap = gbitmap_create_with_resource(get_resource_for_weather_conditions(conditions));
+        bitmap_layer_set_bitmap(icon_layer, icon_bitmap);
+        
+        last_weather_update = time(NULL);
+    }
+}
+
+uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
 	bool is_day = conditions >= 1000;
     switch((conditions - (conditions % 100)) % 1000) {
         case 0:
@@ -128,107 +196,6 @@ static uint32_t get_resource_for_conditions(uint32_t conditions) {
     return RESOURCE_ID_ICON_CLOUD_ERROR;
 }
 
-static void request_weather_update() {
-    DictionaryIterator *iter;
-    app_message_outbox_begin(&iter);
-    
-    Tuplet request = TupletInteger(REQUEST_WEATHER_KEY, 1);
-    dict_write_tuplet(iter, &request);
-    
-    app_message_outbox_send();
-}
-
-
-
-static void handle_tick(struct tm *now, TimeUnits units_changed) {
-    if(units_changed & MINUTE_UNIT) {
-        static char time_text[6];
-		strftime(time_text, 6, clock_is_24h_style() ? "%H:%M" : "%I:%M", now);
-		
-        text_layer_set_text(time_layer, time_text);
-    }
-    
-    if(units_changed & DAY_UNIT) {
-        static char date_text[11];
-        strftime(date_text, 11, "%a %b %d",  now);
-        text_layer_set_text(date_layer, date_text);
-    }
-    
-    if(need_weather_update()) {
-		APP_LOG(APP_LOG_LEVEL_INFO, "[%01d:%01d:%01d] Updating weather", now->tm_hour, now->tm_min, now->tm_sec);
-        request_weather_update();
-	}
-}
-
-
-
-static void load_preferences() {
-	if(persist_exists(TEMP_PREFERENCE_KEY))
-		temp_format = persist_read_int(TEMP_PREFERENCE_KEY);
-	if(persist_exists(WEATHER_UPDATE_PREFERENCE_KEY))
-		weather_update_frequency = persist_read_int(WEATHER_UPDATE_PREFERENCE_KEY);
-	
-	APP_LOG(APP_LOG_LEVEL_INFO, "Weather update frequency is %d", (int)weather_update_frequency);
-}
-
-static void save_preferences() {
-	status_t save_temp = persist_write_int(TEMP_PREFERENCE_KEY, temp_format);
-	status_t save_weather_update = persist_write_int(WEATHER_UPDATE_PREFERENCE_KEY, (int)weather_update_frequency);
-	
-	
-	// TODO: Retry saving if failed
-	if(save_temp < 0)
-		APP_LOG(APP_LOG_LEVEL_ERROR, "Saving temperature preference returned %d", (int)save_temp);
-	if(save_weather_update < 0 )
-		APP_LOG(APP_LOG_LEVEL_ERROR, "Saving weather update preference returned %d", (int)save_weather_update);
-	
-}
-
-static void send_preferences() {
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	
-	Tuplet request = TupletInteger(SET_PREFERENCES_KEY, 1);
-	dict_write_tuplet(iter, &request);
-	
-	Tuplet temp = TupletInteger(TEMP_PREFERENCE_KEY, temp_format);
-	dict_write_tuplet(iter, &temp);
-	
-	app_message_outbox_send();
-}
-
-static void update_weather_info(int conditions, int temperature) {
-    if(conditions % 1000) {
-        static char temperature_text[8];
-        snprintf(temperature_text, 8, "%d\u00B0", temperature);
-        text_layer_set_text(temperature_layer, temperature_text);
-        
-        if(10 <= temperature && temperature <= 99) {
-            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+3, 72, 80));
-            text_layer_set_font(temperature_layer, futura_35);
-        }
-        else if((0 <= temperature && temperature <= 9) || (-9 <= temperature && temperature <= -1)){
-            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19, 72, 80));
-            text_layer_set_font(temperature_layer, futura_40);
-        }
-        else if((100 <= temperature) || (-99 <= temperature && temperature <= -10)) {
-            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+3, 72, 80));
-            text_layer_set_font(temperature_layer, futura_28);
-        }
-        else {
-            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+6, 72, 80));
-            text_layer_set_font(temperature_layer, futura_25);
-        }
-        
-        if(icon_bitmap)
-            gbitmap_destroy(icon_bitmap);
-        icon_bitmap = gbitmap_create_with_resource(get_resource_for_conditions(conditions));
-        bitmap_layer_set_bitmap(icon_layer, icon_bitmap);
-        
-        last_weather_update = time(NULL);
-    }
-}
-
 
 
 void out_sent_handler(DictionaryIterator *sent, void *context) {
@@ -279,8 +246,37 @@ void in_dropped_handler(AppMessageResult reason, void *context) {
 
 
 
+int main() {
+    init();
+    app_event_loop();
+    deinit();
+}
 
-static void window_load(Window *window) {
+void init() {
+    window = window_create();
+    window_set_background_color(window, GColorBlack);
+    window_set_fullscreen(window, true);
+    window_set_window_handlers(window, (WindowHandlers) {
+        .load = window_load,
+        .unload = window_unload
+    });
+    
+    app_message_register_inbox_received(in_received_handler);
+    app_message_register_inbox_dropped(in_dropped_handler);
+    app_message_register_outbox_sent(out_sent_handler);
+    app_message_register_outbox_failed(out_failed_handler);
+    
+    const uint32_t inbound_size = 64;
+    const uint32_t outbound_size = 64;
+    app_message_open(inbound_size, outbound_size);
+	
+	load_preferences();
+    
+    const bool animated = true;
+    window_stack_push(window, animated);
+}
+
+void window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     
     futura_18 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FUTURA_18));
@@ -326,7 +322,7 @@ static void window_load(Window *window) {
     handle_tick(now, SECOND_UNIT | MINUTE_UNIT | HOUR_UNIT | DAY_UNIT | MONTH_UNIT | YEAR_UNIT);
 }
 
-static void window_unload(Window *window) {
+void window_unload(Window *window) {
     if (icon_bitmap) {
         gbitmap_destroy(icon_bitmap);
     }
@@ -346,36 +342,28 @@ static void window_unload(Window *window) {
     fonts_unload_custom_font(futura_53);
 }
 
-static void init(void) {
-    window = window_create();
-    window_set_background_color(window, GColorBlack);
-    window_set_fullscreen(window, true);
-    window_set_window_handlers(window, (WindowHandlers) {
-        .load = window_load,
-        .unload = window_unload
-    });
-    
-    app_message_register_inbox_received(in_received_handler);
-    app_message_register_inbox_dropped(in_dropped_handler);
-    app_message_register_outbox_sent(out_sent_handler);
-    app_message_register_outbox_failed(out_failed_handler);
-    
-    const uint32_t inbound_size = 64;
-    const uint32_t outbound_size = 64;
-    app_message_open(inbound_size, outbound_size);
-	
-	load_preferences();
-    
-    const bool animated = true;
-    window_stack_push(window, animated);
-}
-
-static void deinit(void) {
+void deinit() {
     window_destroy(window);
 }
 
-int main(void) {
-    init();
-    app_event_loop();
-    deinit();
+
+
+void handle_tick(struct tm *now, TimeUnits units_changed) {
+    if(units_changed & MINUTE_UNIT) {
+        static char time_text[6];
+		strftime(time_text, 6, clock_is_24h_style() ? "%H:%M" : "%I:%M", now);
+		
+        text_layer_set_text(time_layer, time_text);
+    }
+    
+    if(units_changed & DAY_UNIT) {
+        static char date_text[11];
+        strftime(date_text, 11, "%a %b %d",  now);
+        text_layer_set_text(date_layer, date_text);
+    }
+    
+    if(need_weather_update()) {
+		APP_LOG(APP_LOG_LEVEL_INFO, "[%01d:%01d:%01d] Updating weather", now->tm_hour, now->tm_min, now->tm_sec);
+        request_weather_update();
+	}
 }
