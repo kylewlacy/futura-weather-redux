@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Futura Weather Redux Preferences</title>
+		<style type="text/css">
+			body {
+				font-family: futura, sans-serif;
+			}
+			
+			label, select, input, button {
+				display: block;
+			}
+			
+			select, input, button {
+				margin-bottom: 18px;
+			}
+		</style>
+		<script>			
+			function queryStringParams() {
+				var params = {};
+				var queries = window.location.search.substring(1).split("&");
+				for(var i = 0; i < queries.length; i++) {
+					var p = queries[i].split("=");
+					params[p[0]] = p[1];
+				}
+				
+				return params;
+			}
+			
+			window.onload = function() {
+				var params = queryStringParams();
+				for(var key in params) {
+					var elements = document.getElementsByName(key);
+					if(elements.length > 0)
+						elements[0].value = params[key];
+				}
+			};
+			
+				
+			window.onsubmit = function(e) {
+				var params = {};
+				var children = e.target.childNodes;
+				for(var i = 0; i < children.length; i++) {
+					if(children[i].name && children[i].value) {
+						params[children[i].name] = children[i].value;
+					}
+				}		
+				
+				window.location = "pebblejs://close#" + JSON.stringify(params);
+				return false;
+			}
+		</script>
+	</head>
+	<body>
+		<h1>Futura Weather Redux</h1>
+		<form name="preferences">
+			<label for="temp">Temperature format</label>
+			<select name="temp">
+				<option value="1">Celsius</option>
+				<option value="2">Fahrenheit</option>
+			</select>
+			<label for="weather-update">Weather Update Frequency</label>
+			<select name="weather-update">
+				<option value="600">Every 10 minutes</option>
+				<option value="900">Every 15 minutes</option>
+				<option value="1800">Every 30 minutes</option>
+				<option value="3600">Every hour</option>
+			</select>
+			<label for="provider">Data provider</label>
+			<select name="provider" disabled>
+				<option value="1">Open Weather Map</option>
+				<option value="2">Yahoo! Weather</option>
+			</select>
+			<button name="save" type="submit">Save</button>
+		</form>
+	</body>
+</html>
