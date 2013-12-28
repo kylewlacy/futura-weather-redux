@@ -153,7 +153,6 @@ void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, voi
 
 void in_received_handler(DictionaryIterator *received, void *context) {
 	Tuple *set_weather = dict_find(received, SET_WEATHER_KEY);
-	Tuple *request_preferences = dict_find(received, REQUEST_PREFERENCES_KEY);
 	Tuple *set_preferences = dict_find(received, SET_PREFERENCES_KEY);
 	
 	if(set_weather) {
@@ -161,10 +160,6 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 			update_weather_info(weather);
 		else
 			APP_LOG(APP_LOG_LEVEL_WARNING, "Received weather message without weather");
-	}
-	
-	if(request_preferences) {
-		preferences_send(prefs);
 	}
 	
 	if(set_preferences) {
