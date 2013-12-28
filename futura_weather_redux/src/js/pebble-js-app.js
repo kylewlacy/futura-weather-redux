@@ -13,7 +13,7 @@ function fetchWeather(latitude, longitude) {
 	if(Date.now() - last_weather_update > max_weather_update_frequency) {
 		var response;
 		var req = new XMLHttpRequest();
-		req.open('GET', "http://api.openweathermap.org/data/2.1/find/city?" +
+		req.open('GET', "http://api.openweathermap.org/data/2.5/find?" +
 				 "lat=" + latitude + "&lon=" + longitude + "&cnt=1", true);
 		req.onload = function(e) {
 			if (req.readyState == 4) {
