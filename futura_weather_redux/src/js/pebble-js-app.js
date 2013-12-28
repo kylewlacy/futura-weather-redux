@@ -48,21 +48,9 @@ function fetchWeather(latitude, longitude) {
 }
 
 function sendWeather() {
-	var formatted_temperature = temperature;
-	switch(parseInt(temp_format)) {
-		case 1:
-			formatted_temperature = temperature - 273.15;
-			break;
-		case 2:
-			formatted_temperature = (9.0/5.0)*temperature - 459.67;
-			break;
-		default:
-			console.warn("Unknown temperature format " + temp_format + " (assuming Kelvin)");
-	}
-	
 	Pebble.sendAppMessage({
 		"setWeather": 1,
-		"temperature": Math.round(formatted_temperature),
+		"temperature": Math.round(temperature * 100),		// Pebble SDK only lets us send ints (easily), so we multiply the temperature by 100 to maintain significant digits
 		"conditions": conditions + (is_day ? 1000 : 0)
 	});
 }
@@ -78,12 +66,6 @@ function locationError(err) {
 
 var locationOptions = { "timeout": 15000, "maximumAge": 60000 };
 
-function requestPreferences() {
-	Pebble.sendAppMessage({
-		"requestPreferences": 1
-	});
-}
-
 function setPreferences() {
 	Pebble.sendAppMessage({
 		"setPreferences": 1,
@@ -95,11 +77,11 @@ function setPreferences() {
 
 Pebble.addEventListener("ready", function(e) {
 	locationWatcher = window.navigator.geolocation.watchPosition(locationSuccess, locationError, locationOptions);
-	requestPreferences();
 });
 
 Pebble.addEventListener("appmessage", function(e) {
 	if(e.payload["setPreferences"] == 1) {
+		console.log("Received preferences");
 		temp_format = e.payload["tempPreference"];
 		weather_update_frequency = e.payload["weatherUpdatePreference"];
 	}

@@ -28,18 +28,20 @@ static Weather *weather;
 void update_weather_info(Weather *weather) {
     if(weather->conditions % 1000) {
         static char temperature_text[8];
-        snprintf(temperature_text, 8, "%d\u00B0", weather->temperature);
+		int temperature = weather_convert_temperature(weather->temperature, prefs->temp_format);
+		
+        snprintf(temperature_text, 8, "%d\u00B0", temperature);
         text_layer_set_text(temperature_layer, temperature_text);
         
-        if(10 <= weather->temperature && weather->temperature <= 99) {
+        if(10 <= temperature && temperature <= 99) {
             layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+3, 72, 80));
             text_layer_set_font(temperature_layer, futura_35);
         }
-        else if((0 <= weather->temperature && weather->temperature <= 9) || (-9 <= weather->temperature && weather->temperature <= -1)) {
+        else if((0 <= temperature && temperature <= 9) || (-9 <= temperature && temperature <= -1)) {
             layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19, 72, 80));
             text_layer_set_font(temperature_layer, futura_40);
         }
-        else if((100 <= weather->temperature) || (-99 <= weather->temperature && weather->temperature <= -10)) {
+        else if((100 <= temperature) || (-99 <= temperature && temperature <= -10)) {
             layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+3, 72, 80));
             text_layer_set_font(temperature_layer, futura_28);
         }
@@ -167,7 +169,7 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 	
 	if(set_preferences) {
 		if(preferences_set(prefs, received))
-			weather_request_update();
+			update_weather_info(weather);
 		else
 			APP_LOG(APP_LOG_LEVEL_WARNING, "Received preference message without preferences");
 		
@@ -206,7 +208,9 @@ void init() {
     app_message_open(inbound_size, outbound_size);
 	
 	prefs = preferences_load();
-	weather = weather_create();
+	weather = weather_load_cache();
+	
+	preferences_send(prefs);
     
     const bool animated = true;
     window_stack_push(window, animated);

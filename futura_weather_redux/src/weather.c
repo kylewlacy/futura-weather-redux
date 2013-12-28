@@ -39,3 +39,19 @@ bool weather_set(Weather *weather, DictionaryIterator *iter) {
 	
 	return conditions || temperature;
 }
+
+
+
+int weather_convert_temperature(int kelvin_temperature, TempFormat format) {
+	float true_temperature = kelvin_temperature / 100.0f;				// We receive the temperature as an int for simplicity, but *100 to maintain accuracy
+	switch(format) {
+		case TEMP_FORMAT_CELCIUS:
+			return true_temperature - 273.15f;
+		case TEMP_FORMAT_FAHRENHEIT:
+			return (9.0f/5.0f)*true_temperature - 459.67f;
+	}
+	
+	APP_LOG(APP_LOG_LEVEL_WARNING, "Unknown temperature format %d, using Kelvin", format);
+	return true_temperature;
+}
+
