@@ -1,4 +1,7 @@
 #include "pebble.h"
+#include "config.h"
+#include "preferences.h"
+#include "weather.h"
 #include "main.h"
 
 static Window *window;
@@ -19,83 +22,24 @@ static TextLayer *temperature_layer;
 static BitmapLayer *icon_layer;
 static GBitmap *icon_bitmap = NULL;
 
-static time_t last_weather_update = 0;
+static Preferences *prefs;
+static Weather *weather;
 
-
-static Preferences prefs = {
-	.temp_format = TEMP_FORMAT_CELCIUS,
-	.weather_update_frequency = 10*60
-};
-
-
-
-
-
-
-void load_preferences() {
-	if(persist_exists(TEMP_PREFERENCE_KEY))
-		prefs.temp_format = persist_read_int(TEMP_PREFERENCE_KEY);
-	if(persist_exists(WEATHER_UPDATE_PREFERENCE_KEY))
-		prefs.weather_update_frequency = persist_read_int(WEATHER_UPDATE_PREFERENCE_KEY);
-}
-
-void save_preferences() {
-	status_t save_temp = persist_write_int(TEMP_PREFERENCE_KEY, prefs.temp_format);
-	status_t save_weather_update = persist_write_int(WEATHER_UPDATE_PREFERENCE_KEY, (int)prefs.weather_update_frequency);
-	
-	
-	// TODO: Retry saving if failed
-	if(save_temp < 0)
-		APP_LOG(APP_LOG_LEVEL_ERROR, "Saving temperature preference returned %d", (int)save_temp);
-	if(save_weather_update < 0 )
-		APP_LOG(APP_LOG_LEVEL_ERROR, "Saving weather update preference returned %d", (int)save_weather_update);
-}
-
-void send_preferences() {
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	
-	Tuplet request = TupletInteger(SET_PREFERENCES_KEY, 1);
-	dict_write_tuplet(iter, &request);
-	
-	Tuplet temp = TupletInteger(TEMP_PREFERENCE_KEY, prefs.temp_format);
-	dict_write_tuplet(iter, &temp);
-	
-	app_message_outbox_send();
-}
-
-
-
-bool need_weather_update() {
-	time_t now = time(NULL);
-    return last_weather_update && (now - last_weather_update >= prefs.weather_update_frequency);
-}
-
-void request_weather_update() {
-    DictionaryIterator *iter;
-    app_message_outbox_begin(&iter);
-    
-    Tuplet request = TupletInteger(REQUEST_WEATHER_KEY, 1);
-    dict_write_tuplet(iter, &request);
-    
-    app_message_outbox_send();
-}
-
-void update_weather_info(int conditions, int temperature) {
-    if(conditions % 1000) {
+void update_weather_info(Weather *weather) {
+    if(weather->conditions % 1000) {
         static char temperature_text[8];
-        snprintf(temperature_text, 8, "%d\u00B0", temperature);
+        snprintf(temperature_text, 8, "%d\u00B0", weather->temperature);
         text_layer_set_text(temperature_layer, temperature_text);
         
-        if(10 <= temperature && temperature <= 99) {
+        if(10 <= weather->temperature && weather->temperature <= 99) {
             layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+3, 72, 80));
             text_layer_set_font(temperature_layer, futura_35);
         }
-        else if((0 <= temperature && temperature <= 9) || (-9 <= temperature && temperature <= -1)){
+        else if((0 <= weather->temperature && weather->temperature <= 9) || (-9 <= weather->temperature && weather->temperature <= -1)) {
             layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19, 72, 80));
             text_layer_set_font(temperature_layer, futura_40);
         }
-        else if((100 <= temperature) || (-99 <= temperature && temperature <= -10)) {
+        else if((100 <= weather->temperature) || (-99 <= weather->temperature && weather->temperature <= -10)) {
             layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+3, 72, 80));
             text_layer_set_font(temperature_layer, futura_28);
         }
@@ -106,10 +50,10 @@ void update_weather_info(int conditions, int temperature) {
         
         if(icon_bitmap)
             gbitmap_destroy(icon_bitmap);
-        icon_bitmap = gbitmap_create_with_resource(get_resource_for_weather_conditions(conditions));
+        icon_bitmap = gbitmap_create_with_resource(get_resource_for_weather_conditions(weather->conditions));
         bitmap_layer_set_bitmap(icon_layer, icon_bitmap);
-        
-        last_weather_update = time(NULL);
+		
+		weather->last_update_time = time(NULL);
     }
 }
 
@@ -211,32 +155,23 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 	Tuple *set_preferences = dict_find(received, SET_PREFERENCES_KEY);
 	
 	if(set_weather) {
-		Tuple *conditions = dict_find(received, WEATHER_CONDITIONS_KEY);
-		Tuple *temperature = dict_find(received, WEATHER_TEMPERATURE_KEY);
-		
-		if(conditions && temperature)
-			update_weather_info((int)conditions->value->int32, (int)temperature->value->int32);
+		if(weather_set(weather, received))
+			update_weather_info(weather);
 		else
-			APP_LOG(APP_LOG_LEVEL_WARNING, "No temperature or weather conditions found in weather response");
+			APP_LOG(APP_LOG_LEVEL_WARNING, "Received weather message without weather");
 	}
 	
 	if(request_preferences) {
-		send_preferences();
+		preferences_send(prefs);
 	}
 	
 	if(set_preferences) {
-		Tuple *temp_preference = dict_find(received, TEMP_PREFERENCE_KEY);
-		Tuple *weather_update_preference = dict_find(received, WEATHER_UPDATE_PREFERENCE_KEY);
+		if(preferences_set(prefs, received))
+			weather_request_update();
+		else
+			APP_LOG(APP_LOG_LEVEL_WARNING, "Received preference message without preferences");
 		
-		if(temp_preference && (temp_preference->value->int32 != prefs.temp_format)) {
-			prefs.temp_format = temp_preference->value->int32;
-			request_weather_update();
-		}
-		if(weather_update_preference && (weather_update_preference->value->int32 != (int)prefs.weather_update_frequency)) {
-			prefs.weather_update_frequency = weather_update_preference->value->int32;
-		}
-		
-		save_preferences();
+		preferences_save(prefs);
 	}
 }
 
@@ -270,7 +205,8 @@ void init() {
     const uint32_t outbound_size = 64;
     app_message_open(inbound_size, outbound_size);
 	
-	load_preferences();
+	prefs = preferences_load();
+	weather = weather_create();
     
     const bool animated = true;
     window_stack_push(window, animated);
@@ -362,8 +298,8 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
         text_layer_set_text(date_layer, date_text);
     }
     
-    if(need_weather_update()) {
+    if(weather_needs_update(weather, prefs->weather_update_frequency)) {
 		APP_LOG(APP_LOG_LEVEL_INFO, "[%01d:%01d:%01d] Updating weather", now->tm_hour, now->tm_min, now->tm_sec);
-        request_weather_update();
+        weather_request_update();
 	}
 }
