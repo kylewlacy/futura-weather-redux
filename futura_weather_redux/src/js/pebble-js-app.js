@@ -100,10 +100,11 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		var new_prefs = JSON.parse(e.response);
 		
 		if(new_prefs["temp"])
-			prefs.temp_format = parseInt(new_prefs.temp);
-		if(prefs["weather-update"])
-			prefs.weather_update_frequency = Math.max(max_weather_update_frequency, parseInt(new_prefs.weather-update));
-		sendPreferences();
+			prefs.temp_format = parseInt(new_prefs["temp"]);
+		if(new_prefs["weather-update"])
+			prefs.weather_update_frequency = Math.max(max_weather_update_frequency, parseInt(new_prefs["weather-update"]));
+		
+		sendPreferences(prefs);
 	}
 });
 
