@@ -29,10 +29,14 @@ function fetchWeather(latitude, longitude) {
 						weather.conditions = weatherResult.weather[0].id;
 						weather.last_update = Date.now();
 						
+						var now = new Date();
+						var sun_calc = SunCalc.getTimes(now, latitude, longitude);
+						
 						sendWeather(weather = {
 							"temperature": weatherResult.main.temp,
 							"conditions": weatherResult.weather[0].id,
-							"last_update": Date.now()
+							"is_day": sun_calc.sunset > now && now > sun_calc.sunrise,
+							"last_update": now.getTime()
 						});
 					}
 				} else {
@@ -52,7 +56,7 @@ function sendWeather(weather) {
 	Pebble.sendAppMessage({
 		"setWeather": 1,
 		"temperature": Math.round(weather.temperature * 100),		// Pebble SDK only lets us send ints (easily), so we multiply the temperature by 100 to maintain significant digits
-		"conditions": weather.conditions
+		"conditions": weather.conditions + (weather.is_day ? 1000 : 0)
 	});
 }
 
