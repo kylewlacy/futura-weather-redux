@@ -156,21 +156,17 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 	if(set_weather) {
 		if(weather_set(weather, received))
 			update_weather_info(weather);
-		else
-			APP_LOG(APP_LOG_LEVEL_WARNING, "Received weather message without weather");
 	}
 	
 	if(set_preferences) {
 		if(preferences_set(prefs, received))
-			update_weather_info(weather);
-		else
-			APP_LOG(APP_LOG_LEVEL_WARNING, "Received preference message without preferences");
+			update_weather_info(weather);		// In case the user changed temperature format
 		
 		preferences_save(prefs);
 	}
 }
 
-void in_dropped_handler(AppMessageResult reason, void *context) {
+void in_dropped_handler(AppMessageResult reason, void *context) {	
     APP_LOG(APP_LOG_LEVEL_ERROR, "Received message dropped (reason: %d)", (int)reason);
 }
 
