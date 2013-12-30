@@ -192,8 +192,8 @@ void init() {
     app_message_register_outbox_sent(out_sent_handler);
     app_message_register_outbox_failed(out_failed_handler);
     
-    const uint32_t inbound_size = 64;
-    const uint32_t outbound_size = 64;
+    const uint32_t inbound_size = 256;
+    const uint32_t outbound_size = 256;
     app_message_open(inbound_size, outbound_size);
 	
 	prefs = preferences_load();
@@ -247,11 +247,10 @@ void window_load(Window *window) {
 	// Draw weather info if the cache is recent enough
 	if(!weather_needs_update(weather, prefs->weather_update_frequency))
 		update_weather_info(weather);
-    
-	
 	
 	tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
     
+	// "Force" a tick with all units
     time_t then = time(NULL);
     struct tm *now = localtime(&then);
     handle_tick(now, SECOND_UNIT | MINUTE_UNIT | HOUR_UNIT | DAY_UNIT | MONTH_UNIT | YEAR_UNIT);
