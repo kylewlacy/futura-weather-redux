@@ -1,4 +1,4 @@
-var configURL = "http://kylewlacy.github.io/futura-weather-redux/v1/preferences.html";
+var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
 
 var prefs = {
 	"tempFormat": 1,
@@ -88,6 +88,12 @@ function sendDiffMessage(messageKey, bareMessage, message) {
 	prevMessages[messageKey] = message;
 }
 
+function queryify(obj) {
+	var queries = [];
+	for(var key in obj) { queries.push(key + "=" + obj[key]) };
+	return "?" + queries.join("&");
+}
+
 
 Pebble.addEventListener("ready", function(e) { });
 
@@ -107,17 +113,15 @@ Pebble.addEventListener("appmessage", function(e) {
 });
 
 Pebble.addEventListener("showConfiguration", function() {
-	Pebble.openURL(configURL + "?temp=" + prefs.tempFormat + "&weather-update=" + prefs.weatherUpdateFreq);
+	Pebble.openURL(configURL + queryify(prefs));
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {
 	if(e && e.response) {
 		var newPrefs = JSON.parse(e.response);
-		
-		if(newPrefs["temp"])
-			prefs.tempFormat = parseInt(newPrefs["temp"]);
-		if(newPrefs["weather-update"])
-			prefs.weatherUpdateFreq = Math.max(maxWeatherUpdateFreq, parseInt(newPrefs["weather-update"]));
+		for(var key in prefs) {
+			if(newPrefs[key]) { prefs[key] = parseInt(newPrefs[key]); }
+		}
 		
 		sendPreferences(prefs);
 	}
