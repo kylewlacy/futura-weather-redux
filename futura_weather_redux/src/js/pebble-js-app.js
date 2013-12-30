@@ -92,14 +92,17 @@ function sendDiffMessage(messageKey, bareMessage, message) {
 Pebble.addEventListener("ready", function(e) { });
 
 Pebble.addEventListener("appmessage", function(e) {
-	if(e.payload["setPreferences"] == 1) {
-		prefs = e.payload;
+	if(e.payload["setPrefs"] == 1) {
+		for(var key in prefs)
+			if(e.payload[key]) { prefs[key] = e.payload[key]; }
 	}
 	else if(e.payload["requestWeather"] == 1) {
 		fetchWeather();
 	}
 	else {
-		console.warn("Received unknown app message");
+		console.warn("Received unknown app message:");
+		for(var key in e.payload)
+			console.log("  " + key + ": " + e.payload[key]);
 	}
 });
 
