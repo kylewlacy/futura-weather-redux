@@ -14,9 +14,9 @@
 		"setWeather": 2,
 		"temperature": 3,
 		"conditions": 4,
-		"setPreferences": 5,
-		"tempPreference": 6,
-		"weatherUpdatePreference": 7
+		"setPrefs": 5,
+		"tempFormat": 6,
+		"weatherUpdateFreq": 7
 	},
 	"resources": {
 		"media": [

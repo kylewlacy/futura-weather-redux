@@ -150,8 +150,8 @@ void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, voi
 }
 
 void in_received_handler(DictionaryIterator *received, void *context) {
-	Tuple *set_weather = dict_find(received, SET_WEATHER_KEY);
-	Tuple *set_preferences = dict_find(received, SET_PREFERENCES_KEY);
+	Tuple *set_weather = dict_find(received, SET_WEATHER_MSG_KEY);
+	Tuple *set_preferences = dict_find(received, SET_PREFERENCES_MSG_KEY);
 	
 	if(set_weather) {
 		weather_set(weather, received);
@@ -245,7 +245,7 @@ void window_load(Window *window) {
     layer_add_child(window_layer, weather_layer);
 	
 	// Draw weather info if the cache is recent enough
-	if(!weather_needs_update(weather, prefs->weather_update_frequency))
+	if(!weather_needs_update(weather, prefs->weather_update_freq))
 		update_weather_info(weather);
 	
 	tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
@@ -297,6 +297,6 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
     }
     
 	// TOOD: Tell don't ask
-    if(weather_needs_update(weather, prefs->weather_update_frequency))
+    if(weather_needs_update(weather, prefs->weather_update_freq))
         weather_request_update();
 }

@@ -1,22 +1,22 @@
-var config_url = "http://kylewlacy.github.io/futura-weather-redux/v1/preferences.html";
+var configURL = "http://kylewlacy.github.io/futura-weather-redux/v1/preferences.html";
 
 var prefs = {
-	"temp_format": 1,
-	"weather_update_frequency": 10 * 60
+	"tempFormat": 1,
+	"weatherUpdateFreq": 10 * 60
 };
 
 var weather = {
 	"temperature": -461,
 	"conditions": 0,
-	"last_update": 0
+	"lastUpdate": 0
 };
-var prev_messages = {};
+var prevMessages = {};
 var coords;
 
-var max_weather_update_frequency = 10 * 60;
+var maxWeatherUpdateFreq = 10 * 60;
 
 function fetchWeather() {
-	if(Math.round(Date.now()/1000) - weather.last_update >= max_weather_update_frequency) {
+	if(Math.round(Date.now()/1000) - weather.lastUpdate >= maxWeatherUpdateFreq) {
 		window.navigator.geolocation.getCurrentPosition(
 			function(pos) { coords = pos.coords; },
 			function(err) { console.warn("location error (" + err.code + "): " + err.message); },
@@ -36,13 +36,13 @@ function fetchWeather() {
 						var weatherResult = response.list[0];
 						
 						var now = new Date();
-						var sun_calc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
+						var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
 						
 						sendWeather(weather = {
 							"temperature": weatherResult.main.temp,
 							"conditions": weatherResult.weather[0].id,
-							"is_day": sun_calc.sunset > now && now > sun_calc.sunrise,
-							"last_update": Math.round(now.getTime() / 1000)
+							"isDay": sunCalc.sunset > now && now > sunCalc.sunrise,
+							"lastUpdate": Math.round(now.getTime() / 1000)
 						});
 					}
 				}
@@ -62,36 +62,33 @@ function fetchWeather() {
 function sendWeather(weather) {
 	sendDiffMessage("weather", {"setWeather": 1}, {
 		"temperature": Math.round(weather.temperature * 100),
-		"conditions": weather.conditions + (weather.is_day ? 1000 : 0)
+		"conditions": weather.conditions + (weather.isDay ? 1000 : 0)
 	});
 }
 
 function sendPreferences(prefs) {
-	sendDiffMessage("preferences", {"setPreferences": 1}, {
-		"tempPreference": prefs.temp_format,
-		"weatherUpdatePreference": prefs.weather_update_frequency
-	})
+	sendDiffMessage("preferences", {"setPrefs": 1}, prefs)
 }
 
 
-function sendDiffMessage(message_key, bare_message, message) {
-	var client_message = bare_message;
-	var diff_message = {};
+function sendDiffMessage(messageKey, bareMessage, message) {
+	var clientMessage = bareMessage;
+	var diffMessage = {};
 	
-	var last_message = prev_messages[message_key];
-	if(!last_message)
-		last_message = {};
+	var lastMessage = prevMessages[messageKey];
+	if(!lastMessage)
+		lastMessage = {};
 	
 	for(var key in message) {
-		if(message[key] != last_message[key]) { diff_message[key] = message[key]; }
+		if(message[key] != lastMessage[key]) { diffMessage[key] = message[key]; }
 	}
-	for(var key in diff_message) { client_message[key] = diff_message[key]; }
+	for(var key in diffMessage) { clientMessage[key] = diffMessage[key]; }
 	
-	console.log(message_key + " diff at " + (new Date()).toString() + ":");
-	for(var key in client_message) { console.log(key + ": " + client_message[key]); }
+	console.log(messageKey + " diff at " + (new Date()).toString() + ":");
+	for(var key in clientMessage) { console.log(key + ": " + clientMessage[key]); }
 	
-	Pebble.sendAppMessage(client_message);
-	prev_messages[message_key] = message;
+	Pebble.sendAppMessage(clientMessage);
+	prevMessages[messageKey] = message;
 }
 
 
@@ -99,10 +96,7 @@ Pebble.addEventListener("ready", function(e) { });
 
 Pebble.addEventListener("appmessage", function(e) {
 	if(e.payload["setPreferences"] == 1) {
-		prefs = {
-			"temp_format": e.payload["tempPreference"],
-			"weather_update_frequency": e.payload["weatherUpdatePreference"]
-		};
+		prefs = e.payload;
 	}
 	else if(e.payload["requestWeather"] == 1) {
 		fetchWeather();
@@ -113,17 +107,17 @@ Pebble.addEventListener("appmessage", function(e) {
 });
 
 Pebble.addEventListener("showConfiguration", function() {
-	Pebble.openURL(config_url + "?temp=" + prefs.temp_format + "&weather-update=" + prefs.weather_update_frequency);
+	Pebble.openURL(configURL + "?temp=" + prefs.tempFormat + "&weather-update=" + prefs.weatherUpdateFreq);
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {
 	if(e && e.response) {
-		var new_prefs = JSON.parse(e.response);
+		var newPrefs = JSON.parse(e.response);
 		
-		if(new_prefs["temp"])
-			prefs.temp_format = parseInt(new_prefs["temp"]);
-		if(new_prefs["weather-update"])
-			prefs.weather_update_frequency = Math.max(max_weather_update_frequency, parseInt(new_prefs["weather-update"]));
+		if(newPrefs["temp"])
+			prefs.tempFormat = parseInt(newPrefs["temp"]);
+		if(newPrefs["weather-update"])
+			prefs.weatherUpdateFreq = Math.max(maxWeatherUpdateFreq, parseInt(newPrefs["weather-update"]));
 		
 		sendPreferences(prefs);
 	}

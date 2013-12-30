@@ -42,15 +42,15 @@ void weather_request_update() {
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
     
-    Tuplet request = TupletInteger(REQUEST_WEATHER_KEY, 1);
+    Tuplet request = TupletInteger(REQUEST_WEATHER_MSG_KEY, 1);
     dict_write_tuplet(iter, &request);
     
     app_message_outbox_send();
 }
 
 void weather_set(Weather *weather, DictionaryIterator *iter) {
-	Tuple *conditions = dict_find(iter, WEATHER_CONDITIONS_KEY);
-	Tuple *temperature = dict_find(iter, WEATHER_TEMPERATURE_KEY);
+	Tuple *conditions = dict_find(iter, WEATHER_CONDITIONS_MSG_KEY);
+	Tuple *temperature = dict_find(iter, WEATHER_TEMPERATURE_MSG_KEY);
 	
 	if(conditions)
 		weather->conditions = conditions->value->int32;
