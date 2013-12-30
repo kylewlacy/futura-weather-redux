@@ -2,8 +2,6 @@
 #include "config.h"
 #include "weather.h"
 
-bool force_update = false;
-
 Weather* weather_load_cache() {
 	static Weather weather = {
 		.last_update_time = 0,
@@ -33,7 +31,7 @@ bool weather_save_cache(Weather *weather) {
 
 bool weather_needs_update(Weather *weather, time_t update_freq) {
 	time_t now = time(NULL);
-	return force_update || (now - weather->last_update_time >= update_freq);
+	return now - weather->last_update_time >= update_freq;
 }
 
 void weather_request_update() {
