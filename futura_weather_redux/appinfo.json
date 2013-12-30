@@ -21,135 +21,40 @@
 	"resources": {
 		"media": [
 			{
-				"name": "FUTURA_18",
+				"name": "MENU_ICON",
+				"type": "png",
+				"file": "images/menu-icon.png",
+				"menuIcon": true
+			},
+			{
+				"name": "FONT_FUTURA_18",
 				"type": "font",
 				"file": "fonts/futura.ttf"
 			},
             {
-				"name": "FUTURA_25",
+				"name": "FONT_FUTURA_25",
 				"type": "font",
 				"file": "fonts/futura.ttf"
 			},
 			{
-                "name": "FUTURA_28",
+                "name": "FONT_FUTURA_28",
                 "type": "font",
                 "file": "fonts/futura.ttf"
 			},
 			{
-				"name": "FUTURA_35",
+				"name": "FONT_FUTURA_35",
 				"type": "font",
 				"file": "fonts/futura.ttf"
 			},
 			{
-				"name": "FUTURA_40",
+				"name": "FONT_FUTURA_40",
 				"type": "font",
 				"file": "fonts/futura.ttf"
 			},
             {
-				"name": "FUTURA_CONDENSED_53",
+				"name": "FONT_FUTURA_CONDENSED_53",
 				"type": "font",
 				"file": "fonts/futura_condensed_bold-webfont.ttf"
-			},
-			{
-				"name": "ICON_WIND",
-				"type": "png",
-				"file": "images/wind.png"
-			},
-			{
-				"name": "ICON_PARTLY_CLOUDY_NIGHT",
-				"type": "png",
-				"file": "images/partly-cloudy-night.png"
-			},
-			{
-				"name": "ICON_PARTLY_CLOUDY_DAY",
-				"type": "png",
-				"file": "images/partly-cloudy-day.png"
-			},
-			{
-				"name": "ICON_CLOUDY",
-				"type": "png",
-				"file": "images/cloudy.png"
-			},
-			{
-				"name": "ICON_FOG",
-				"type": "png",
-				"file": "images/fog.png"
-			},
-			{
-				"name": "ICON_SLEET",
-				"type": "png",
-				"file": "images/sleet.png"
-			},
-			{
-				"name": "ICON_SNOW",
-				"type": "png",
-				"file": "images/snow.png"
-			},
-			{
-				"name": "ICON_RAIN",
-				"type": "png",
-				"file": "images/rain.png"
-			},
-			{
-				"name": "ICON_CLEAR_NIGHT",
-				"type": "png",
-				"file": "images/clear-night.png"
-			},
-			{
-				"name": "ICON_CLEAR_DAY",
-				"type": "png",
-				"file": "images/clear-day.png"
-			},
-			{
-				"name": "ICON_CLOUD_ERROR",
-				"type": "png",
-				"file": "images/cloud-error.png"
-			},
-			{
-				"name": "IMAGE_MENU_ICON",
-				"type": "png",
-				"file": "images/menu_icon_futura.png",
-				"menuIcon": true
-			},
-			{
-				"name": "ICON_PHONE_ERROR",
-				"type": "png",
-				"file": "images/phone_error.png"
-			},
-			{
-				"name": "ICON_SNOW_SLEET",
-				"type": "png",
-				"file": "images/snow-sleet.png"
-			},
-			{
-				"name": "ICON_THUNDER",
-				"type": "png",
-				"file": "images/thunder.png"
-			},
-			{
-				"name": "ICON_RAIN_SNOW",
-				"type": "png",
-				"file": "images/rain-snow.png"
-			},
-			{
-				"name": "ICON_RAIN_SLEET",
-				"type": "png",
-				"file": "images/rain-sleet.png"
-			},
-			{
-				"name": "ICON_COLD",
-				"type": "png",
-				"file": "images/cold.png"
-			},
-			{
-				"name": "ICON_HOT",
-				"type": "png",
-				"file": "images/hot.png"
-			},
-			{
-				"name": "ICON_NOT_AVAILABLE",
-				"type": "png",
-				"file": "images/not-available.png"
 			},
 			{
 				"name": "ICON_LOADING1",
@@ -167,9 +72,99 @@
 				"file": "images/loading3.png"
 			},
 			{
-				"name": "ICON_DRIZZLE",
+				"name": "ICON_CLOUD_ERROR",
 				"type": "png",
-				"file": "images/drizzle.png"
+				"file": "images/cloud-error.png"
+			},
+			{
+				"name": "ICON_PHONE_ERROR",
+				"type": "png",
+				"file": "images/phone-error.png"
+			},
+			{
+				"name": "WEATHER_CLEAR_DAY",
+				"type": "png",
+				"file": "images/weather/clear-day.png"
+			},
+			{
+				"name": "WEATHER_CLEAR_NIGHT",
+				"type": "png",
+				"file": "images/weather/clear-night.png"
+			},
+			{
+				"name": "WEATHER_PARTLY_CLOUDY_DAY",
+				"type": "png",
+				"file": "images/weather/partly-cloudy-day.png"
+			},
+			{
+				"name": "WEATHER_PARTLY_CLOUDY_NIGHT",
+				"type": "png",
+				"file": "images/weather/partly-cloudy-night.png"
+			},
+			{
+				"name": "WEATHER_CLOUDY",
+				"type": "png",
+				"file": "images/weather/cloudy.png"
+			},
+			{
+				"name": "WEATHER_WIND",
+				"type": "png",
+				"file": "images/weather/wind.png"
+			},
+			{
+				"name": "WEATHER_FOG",
+				"type": "png",
+				"file": "images/weather/fog.png"
+			},
+			{
+				"name": "WEATHER_DRIZZLE",
+				"type": "png",
+				"file": "images/weather/drizzle.png"
+			},
+			{
+				"name": "WEATHER_RAIN",
+				"type": "png",
+				"file": "images/weather/rain.png"
+			},
+			{
+				"name": "WEATHER_SNOW",
+				"type": "png",
+				"file": "images/weather/snow.png"
+			},
+			{
+				"name": "WEATHER_RAIN_SNOW",
+				"type": "png",
+				"file": "images/weather/rain-snow.png"
+			},
+			{
+				"name": "WEATHER_SLEET",
+				"type": "png",
+				"file": "images/weather/sleet.png"
+			},
+			{
+				"name": "WEATHER_RAIN_SLEET",
+				"type": "png",
+				"file": "images/weather/rain-sleet.png"
+			},
+			{
+				"name": "WEATHER_SNOW_SLEET",
+				"type": "png",
+				"file": "images/weather/snow-sleet.png"
+			},
+			{
+				"name": "WEATHER_THUNDER",
+				"type": "png",
+				"file": "images/weather/thunder.png"
+			},
+			{
+				"name": "WEATHER_HOT",
+				"type": "png",
+				"file": "images/weather/hot.png"
+			},
+			{
+				"name": "WEATHER_COLD",
+				"type": "png",
+				"file": "images/weather/cold.png"
 			}
 		]
 	}

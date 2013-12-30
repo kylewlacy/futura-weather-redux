@@ -64,66 +64,66 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
             APP_LOG(APP_LOG_LEVEL_DEBUG, "Error getting data (conditions returned %d)", (int)conditions);
             return RESOURCE_ID_ICON_CLOUD_ERROR;
         case 200:
-            return RESOURCE_ID_ICON_THUNDER;
+            return RESOURCE_ID_WEATHER_THUNDER;
         case 300:
-            return RESOURCE_ID_ICON_DRIZZLE;
+            return RESOURCE_ID_WEATHER_DRIZZLE;
         case 500:
-            return RESOURCE_ID_ICON_RAIN;
+            return RESOURCE_ID_WEATHER_RAIN;
         case 600:
             switch(conditions % 100) {
                 case 611:
-                    return RESOURCE_ID_ICON_SLEET;
+                    return RESOURCE_ID_WEATHER_SLEET;
                 case 612:
-                    return RESOURCE_ID_ICON_RAIN_SLEET;
+                    return RESOURCE_ID_WEATHER_RAIN_SLEET;
                 case 615:
                 case 616:
                 case 620:
                 case 621:
                 case 622:
-                    return RESOURCE_ID_ICON_RAIN_SNOW;
+                    return RESOURCE_ID_WEATHER_RAIN_SNOW;
             }
-            return RESOURCE_ID_ICON_SNOW;
+            return RESOURCE_ID_WEATHER_SNOW;
         case 700:
             switch(conditions % 100) {
                 case 731:
                 case 781:
-                    return RESOURCE_ID_ICON_WIND;
+                    return RESOURCE_ID_WEATHER_WIND;
             }
-            return RESOURCE_ID_ICON_FOG;
+            return RESOURCE_ID_WEATHER_FOG;
         case 800:
             switch(conditions % 100) {
                 case 0:
 					if(is_day)
-						return RESOURCE_ID_ICON_CLEAR_DAY;
-					return RESOURCE_ID_ICON_CLEAR_NIGHT;
+						return RESOURCE_ID_WEATHER_CLEAR_DAY;
+					return RESOURCE_ID_WEATHER_CLEAR_NIGHT;
                 case 1:
                 case 2:
 					if(is_day)
-						return RESOURCE_ID_ICON_PARTLY_CLOUDY_DAY;
-					return RESOURCE_ID_ICON_PARTLY_CLOUDY_NIGHT;
+						return RESOURCE_ID_WEATHER_PARTLY_CLOUDY_DAY;
+					return RESOURCE_ID_WEATHER_PARTLY_CLOUDY_NIGHT;
                 case 3:
                 case 4:
-                    return RESOURCE_ID_ICON_CLOUDY;
+                    return RESOURCE_ID_WEATHER_CLOUDY;
             }
         case 900:
             switch(conditions % 100) {
                 case 0:
                 case 1:
                 case 2:
-                    return RESOURCE_ID_ICON_WIND;
+                    return RESOURCE_ID_WEATHER_WIND;
                 case 3:
-                    return RESOURCE_ID_ICON_HOT;
+                    return RESOURCE_ID_WEATHER_HOT;
                 case 4:
-                    return RESOURCE_ID_ICON_COLD;
+                    return RESOURCE_ID_WEATHER_COLD;
                 case 5:
-                    return RESOURCE_ID_ICON_WIND;
+                    return RESOURCE_ID_WEATHER_WIND;
                 case 950:
                 case 951:
                 case 952:
                 case 953:
 					if(is_day)
-						return RESOURCE_ID_ICON_CLEAR_DAY;
-					return RESOURCE_ID_ICON_CLEAR_NIGHT;
+						return RESOURCE_ID_WEATHER_CLEAR_DAY;
+					return RESOURCE_ID_WEATHER_CLEAR_NIGHT;
                 case 954:
                 case 955:
                 case 956:
@@ -132,7 +132,7 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
                 case 960:
                 case 961:
                 case 962:
-                    return RESOURCE_ID_ICON_WIND;
+                    return RESOURCE_ID_WEATHER_WIND;
             }
     }
     
@@ -208,12 +208,12 @@ void init() {
 void window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     
-    futura_18 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FUTURA_18));
-    futura_25 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FUTURA_25));
-    futura_28 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FUTURA_28));
-    futura_35 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FUTURA_35));
-    futura_40 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FUTURA_40));
-    futura_53 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FUTURA_CONDENSED_53));
+    futura_18 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FUTURA_18));
+    futura_25 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FUTURA_25));
+    futura_28 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FUTURA_28));
+    futura_35 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FUTURA_35));
+    futura_40 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FUTURA_40));
+    futura_53 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FUTURA_CONDENSED_53));
     
     time_layer = text_layer_create(GRect(0, 2, 144, 168-6));
     text_layer_set_text_alignment(time_layer, GTextAlignmentCenter);
