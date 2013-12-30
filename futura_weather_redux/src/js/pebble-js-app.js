@@ -10,81 +10,102 @@ var weather = {
 	"conditions": 0,
 	"last_update": 0
 };
+var prev_messages = {};
+var coords;
 
 var max_weather_update_frequency = 10 * 60;
 
-function fetchWeather(latitude, longitude) {
-	if(Date.now() - weather.last_update > max_weather_update_frequency) {
+function fetchWeather() {
+	if(Math.round(Date.now()/1000) - weather.last_update >= max_weather_update_frequency) {
+		window.navigator.geolocation.getCurrentPosition(
+			function(pos) { coords = pos.coords; },
+			function(err) { console.warn("location error (" + err.code + "): " + err.message); },
+			{ "timeout": 15000, "maximumAge": 60000 }
+		);
+		
+		
 		var response;
 		var req = new XMLHttpRequest();
 		req.open('GET', "http://api.openweathermap.org/data/2.5/find?" +
-				 "lat=" + latitude + "&lon=" + longitude + "&cnt=1", true);
+				 "lat=" + coords.latitude + "&lon=" + coords.longitude + "&cnt=1", true);
 		req.onload = function(e) {
 			if (req.readyState == 4) {
 				if(req.status == 200) {
 					response = JSON.parse(req.responseText);
 					if (response && response.list && response.list.length > 0) {
 						var weatherResult = response.list[0];
-						weather.temperature = weatherResult.main.temp;
-						weather.conditions = weatherResult.weather[0].id;
-						weather.last_update = Date.now();
 						
 						var now = new Date();
-						var sun_calc = SunCalc.getTimes(now, latitude, longitude);
+						var sun_calc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
 						
 						sendWeather(weather = {
 							"temperature": weatherResult.main.temp,
 							"conditions": weatherResult.weather[0].id,
 							"is_day": sun_calc.sunset > now && now > sun_calc.sunrise,
-							"last_update": now.getTime()
+							"last_update": Math.round(now.getTime() / 1000)
 						});
 					}
-				} else {
-					console.log("Error getting weather info");
+				}
+				else {
+					console.log("Error getting weather info (status " + req.status + ")");
 				}
 			}
 		}
 		req.send(null);
 	}
 	else {
-		console.warn("Weather update requested too soon; loading from cache");
+		console.warn("Weather update requested too soon; loading from cache (" + (new Date()).toString() + ")");
 		sendWeather(weather);
 	}
 }
 
 function sendWeather(weather) {
-	Pebble.sendAppMessage({
-		"setWeather": 1,
-		"temperature": Math.round(weather.temperature * 100),		// Pebble SDK only lets us send ints (easily), so we multiply the temperature by 100 to maintain significant digits
+	sendDiffMessage("weather", {"setWeather": 1}, {
+		"temperature": Math.round(weather.temperature * 100),
 		"conditions": weather.conditions + (weather.is_day ? 1000 : 0)
 	});
 }
 
 function sendPreferences(prefs) {
-	Pebble.sendAppMessage({
-		"setPreferences": 1,
+	sendDiffMessage("preferences", {"setPreferences": 1}, {
 		"tempPreference": prefs.temp_format,
 		"weatherUpdatePreference": prefs.weather_update_frequency
-	});
+	})
 }
 
 
-Pebble.addEventListener("ready", function(e) {
-});
+function sendDiffMessage(message_key, bare_message, message) {
+	var client_message = bare_message;
+	var diff_message = {};
+	
+	var last_message = prev_messages[message_key];
+	if(!last_message)
+		last_message = {};
+	
+	for(var key in message) {
+		if(message[key] != last_message[key]) { diff_message[key] = message[key]; }
+	}
+	for(var key in diff_message) { client_message[key] = diff_message[key]; }
+	
+	console.log(message_key + " diff at " + (new Date()).toString() + ":");
+	for(var key in client_message) { console.log(key + ": " + client_message[key]); }
+	
+	Pebble.sendAppMessage(client_message);
+	prev_messages[message_key] = message;
+}
+
+
+Pebble.addEventListener("ready", function(e) { });
 
 Pebble.addEventListener("appmessage", function(e) {
 	if(e.payload["setPreferences"] == 1) {
 		prefs = {
 			"temp_format": e.payload["tempPreference"],
-			"weather_update_freqeuncy": e.payload["weatherUpdatePreference"]
+			"weather_update_frequency": e.payload["weatherUpdatePreference"]
 		};
 	}
 	else if(e.payload["requestWeather"] == 1) {
-		window.navigator.geolocation.getCurrentPosition(function(pos) {
-			fetchWeather(pos.coords.latitude, pos.coords.longitude);
-		}, function(error) {
-			console.warn("location error (" + err.code + "): " + err.message);
-		}, { "timeout": 15000, "maximumAge": 60000 });
+		fetchWeather();
 	}
 	else {
 		console.warn("Received unknown app message");
