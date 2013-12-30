@@ -95,7 +95,7 @@ function queryify(obj) {
 }
 
 
-Pebble.addEventListener("ready", function(e) { });
+Pebble.addEventListener("ready", function(e) { prevMessages = {}; });
 
 Pebble.addEventListener("appmessage", function(e) {
 	if(e.payload["setPrefs"] == 1) {
