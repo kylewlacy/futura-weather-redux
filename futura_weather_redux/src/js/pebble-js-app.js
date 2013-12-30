@@ -84,9 +84,6 @@ function sendDiffMessage(messageKey, bareMessage, message) {
 	}
 	for(var key in diffMessage) { clientMessage[key] = diffMessage[key]; }
 	
-	console.log(messageKey + " diff at " + (new Date()).toString() + ":");
-	for(var key in clientMessage) { console.log(key + ": " + clientMessage[key]); }
-	
 	Pebble.sendAppMessage(clientMessage);
 	prevMessages[messageKey] = message;
 }
