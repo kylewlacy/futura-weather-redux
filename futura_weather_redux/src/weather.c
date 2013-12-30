@@ -24,7 +24,11 @@ bool weather_save_cache(Weather *weather) {
 	status_t save_temperature = persist_write_int(WEATHER_CACHE_TEMPERATURE_PERSIST_KEY, weather->temperature);
 	status_t save_conditions = persist_write_int(WEATHER_CACHE_CONDITIONS_PERSIST_KEY, weather->conditions);
 	
-	return save_last_update >= 0 && save_temperature >= 0 && save_conditions >= 0;
+	if(save_last_update < 0 || save_temperature < 0 || save_conditions < 0) {
+		APP_LOG(APP_LOG_LEVEL_WARNING, "Failed to save weather cache");
+		return false;
+	}
+	return true;
 }
 
 

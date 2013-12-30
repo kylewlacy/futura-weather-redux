@@ -21,7 +21,11 @@ bool preferences_save(Preferences *prefs) {
 	status_t save_temp = persist_write_int(PREF_TEMP_FORMAT_PERSIST_KEY, prefs->temp_format);
 	status_t save_weather_update = persist_write_int(PREF_WEATHER_UPDATE_FREQ_PERSIST_KEY, (int)prefs->weather_update_frequency);
 	
-	return save_temp >= 0 && save_weather_update >= 0;
+	if(save_temp < 0 || save_weather_update < 0) {
+		APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to save preferences");
+		return false;
+	}
+	return true;
 }
 
 void preferences_send(Preferences *prefs) {
