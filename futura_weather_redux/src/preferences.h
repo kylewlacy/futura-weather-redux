@@ -11,6 +11,6 @@ typedef struct {
 Preferences* preferences_load();
 bool preferences_save(Preferences *prefs);
 void preferences_send(Preferences *prefs);
-bool preferences_set(Preferences *prefs, DictionaryIterator *iter);
+void preferences_set(Preferences *prefs, DictionaryIterator *iter);
 
 #endif

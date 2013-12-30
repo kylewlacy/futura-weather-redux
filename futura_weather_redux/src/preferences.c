@@ -40,7 +40,7 @@ void preferences_send(Preferences *prefs) {
 	app_message_outbox_send();
 }
 
-bool preferences_set(Preferences *prefs, DictionaryIterator *iter) {
+void preferences_set(Preferences *prefs, DictionaryIterator *iter) {
 	Tuple *temp_format = dict_find(iter, TEMP_PREFERENCE_KEY);
 	Tuple *weather_update_frequency = dict_find(iter, WEATHER_UPDATE_PREFERENCE_KEY);
 	
@@ -48,6 +48,4 @@ bool preferences_set(Preferences *prefs, DictionaryIterator *iter) {
 		prefs->temp_format = temp_format->value->int32;
 	if(weather_update_frequency && (weather_update_frequency->value->int32 != (int)prefs->weather_update_frequency))
 		prefs->weather_update_frequency = weather_update_frequency->value->int32;
-	
-	return temp_format || weather_update_frequency;
 }

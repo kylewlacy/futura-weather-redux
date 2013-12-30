@@ -12,7 +12,7 @@ typedef struct {
 Weather* weather_load_cache();
 bool weather_save_cache(Weather *weather);
 
-bool weather_set(Weather *weather, DictionaryIterator *iter);
+void weather_set(Weather *weather, DictionaryIterator *iter);
 bool weather_needs_update(Weather *weather, time_t update_freq);
 void weather_request_update();
 

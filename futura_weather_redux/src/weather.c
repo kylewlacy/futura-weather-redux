@@ -46,7 +46,7 @@ void weather_request_update() {
     app_message_outbox_send();
 }
 
-bool weather_set(Weather *weather, DictionaryIterator *iter) {
+void weather_set(Weather *weather, DictionaryIterator *iter) {
 	Tuple *conditions = dict_find(iter, WEATHER_CONDITIONS_KEY);
 	Tuple *temperature = dict_find(iter, WEATHER_TEMPERATURE_KEY);
 	
@@ -55,14 +55,9 @@ bool weather_set(Weather *weather, DictionaryIterator *iter) {
 	if(temperature)
 		weather->temperature = temperature->value->int32;
 	
-	if(conditions || temperature) {
-		time_t now = time(NULL);
-		weather->last_update_time = now;
-		weather_save_cache(weather);
-		
-		return true;
-	}
-	return false;
+	time_t now = time(NULL);
+	weather->last_update_time = now;
+	weather_save_cache(weather);
 }
 
 

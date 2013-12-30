@@ -154,13 +154,13 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 	Tuple *set_preferences = dict_find(received, SET_PREFERENCES_KEY);
 	
 	if(set_weather) {
-		if(weather_set(weather, received))
-			update_weather_info(weather);
+		weather_set(weather, received);
+		update_weather_info(weather);
 	}
 	
 	if(set_preferences) {
-		if(preferences_set(prefs, received))
-			update_weather_info(weather);		// In case the user changed temperature format
+		preferences_set(prefs, received);
+		update_weather_info(weather);		// In case the user changed temperature format
 		
 		preferences_save(prefs);
 	}
