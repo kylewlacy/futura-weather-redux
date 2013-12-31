@@ -17,10 +17,14 @@ static TextLayer *time_layer;
 static TextLayer *date_layer;
 
 static Layer *weather_layer;
+static TextLayer *weather_temperature_layer;
+static BitmapLayer *weather_icon_layer;
+static GBitmap *weather_icon_bitmap = NULL;
 
-static TextLayer *temperature_layer;
-static BitmapLayer *icon_layer;
-static GBitmap *icon_bitmap = NULL;
+static Layer *statusbar_layer;
+static BitmapLayer *statusbar_battery_layer;
+static uint32_t statusbar_battery_resource;
+static GBitmap *statusbar_battery_bitmap = NULL;
 
 static Preferences *prefs;
 static Weather *weather;
@@ -31,29 +35,29 @@ void update_weather_info(Weather *weather) {
 		int temperature = weather_convert_temperature(weather->temperature, prefs->temp_format);
 		
         snprintf(temperature_text, 8, "%d\u00B0", temperature);
-        text_layer_set_text(temperature_layer, temperature_text);
+        text_layer_set_text(weather_temperature_layer, temperature_text);
         
         if(10 <= temperature && temperature <= 99) {
-            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+3, 72, 80));
-            text_layer_set_font(temperature_layer, futura_35);
+            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19+3, 72, 80));
+            text_layer_set_font(weather_temperature_layer, futura_35);
         }
         else if((0 <= temperature && temperature <= 9) || (-9 <= temperature && temperature <= -1)) {
-            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19, 72, 80));
-            text_layer_set_font(temperature_layer, futura_40);
+            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19, 72, 80));
+            text_layer_set_font(weather_temperature_layer, futura_40);
         }
         else if((100 <= temperature) || (-99 <= temperature && temperature <= -10)) {
-            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+3, 72, 80));
-            text_layer_set_font(temperature_layer, futura_28);
+            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19+3, 72, 80));
+            text_layer_set_font(weather_temperature_layer, futura_28);
         }
         else {
-            layer_set_frame(text_layer_get_layer(temperature_layer), GRect(70, 19+6, 72, 80));
-            text_layer_set_font(temperature_layer, futura_25);
+            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19+6, 72, 80));
+            text_layer_set_font(weather_temperature_layer, futura_25);
         }
         
-        if(icon_bitmap)
-            gbitmap_destroy(icon_bitmap);
-        icon_bitmap = gbitmap_create_with_resource(get_resource_for_weather_conditions(weather->conditions));
-        bitmap_layer_set_bitmap(icon_layer, icon_bitmap);
+        if(weather_icon_bitmap)
+            gbitmap_destroy(weather_icon_bitmap);
+        weather_icon_bitmap = gbitmap_create_with_resource(get_resource_for_weather_conditions(weather->conditions));
+        bitmap_layer_set_bitmap(weather_icon_layer, weather_icon_bitmap);
     }
 }
 
@@ -138,6 +142,38 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
     
     APP_LOG(APP_LOG_LEVEL_WARNING, "Unknown wearther conditions: %d", (int)conditions);
     return RESOURCE_ID_ICON_CLOUD_ERROR;
+}
+
+
+
+uint32_t get_resource_for_battery_state(BatteryChargeState battery) {
+	if((battery.is_charging || battery.is_plugged) && battery.charge_percent > 99)
+		return RESOURCE_ID_CHARGED;
+	
+	if(battery.charge_percent >= 99)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_100 : RESOURCE_ID_BATTERY_100;
+	if(battery.charge_percent >= 91)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_91 : RESOURCE_ID_BATTERY_91;
+	if(battery.charge_percent >= 82)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_82 : RESOURCE_ID_BATTERY_82;
+	if(battery.charge_percent >= 73)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_73 : RESOURCE_ID_BATTERY_73;
+	if(battery.charge_percent >= 64)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_64 : RESOURCE_ID_BATTERY_64;
+	if(battery.charge_percent >= 55)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_55 : RESOURCE_ID_BATTERY_55;
+	if(battery.charge_percent >= 46)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_46 : RESOURCE_ID_BATTERY_46;
+	if(battery.charge_percent >= 37)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_37 : RESOURCE_ID_BATTERY_37;
+	if(battery.charge_percent >= 28)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_28 : RESOURCE_ID_BATTERY_28;
+	if(battery.charge_percent >= 19)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_19 : RESOURCE_ID_BATTERY_19;
+	if(battery.charge_percent >= 9)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_9 : RESOURCE_ID_BATTERY_9;
+	
+	return battery.is_charging ? RESOURCE_ID_CHARGING_0 : RESOURCE_ID_BATTERY_0;
 }
 
 
@@ -230,43 +266,59 @@ void window_load(Window *window) {
     layer_add_child(window_layer, text_layer_get_layer(date_layer));
     
     
+	
     weather_layer = layer_create(GRect(0, 90, 144, 80));
     
-    icon_layer = bitmap_layer_create(GRect(9, 13, 60, 60));
-    layer_add_child(weather_layer, bitmap_layer_get_layer(icon_layer));
+    weather_icon_layer = bitmap_layer_create(GRect(9, 13, 60, 60));
+    layer_add_child(weather_layer, bitmap_layer_get_layer(weather_icon_layer));
     
-    temperature_layer = text_layer_create(GRect(70, 19, 72, 80));
-    text_layer_set_text_color(temperature_layer, GColorWhite);
-    text_layer_set_background_color(temperature_layer, GColorClear);
-    text_layer_set_font(temperature_layer, futura_40);
-    text_layer_set_text_alignment(temperature_layer, GTextAlignmentRight);
-    layer_add_child(weather_layer, text_layer_get_layer(temperature_layer));
+    weather_temperature_layer = text_layer_create(GRect(70, 19, 72, 80));
+    text_layer_set_text_color(weather_temperature_layer, GColorWhite);
+    text_layer_set_background_color(weather_temperature_layer, GColorClear);
+    text_layer_set_font(weather_temperature_layer, futura_40);
+    text_layer_set_text_alignment(weather_temperature_layer, GTextAlignmentRight);
+    layer_add_child(weather_layer, text_layer_get_layer(weather_temperature_layer));
     
     layer_add_child(window_layer, weather_layer);
+	
+	
+	
+	statusbar_layer = layer_create(GRect(0, 0, 144, 15));
+	
+	statusbar_battery_layer = bitmap_layer_create(GRect(125, 3, 16, 10));
+	layer_add_child(statusbar_layer, bitmap_layer_get_layer(statusbar_battery_layer));
+	
+	layer_add_child(window_layer, statusbar_layer);
+	
 	
 	// Draw weather info if the cache is recent enough
 	if(!weather_needs_update(weather, prefs->weather_update_freq))
 		update_weather_info(weather);
 	
 	tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
+	battery_state_service_subscribe(handle_battery);
     
-	// "Force" a tick with all units
-    time_t then = time(NULL);
-    struct tm *now = localtime(&then);
-    handle_tick(now, SECOND_UNIT | MINUTE_UNIT | HOUR_UNIT | DAY_UNIT | MONTH_UNIT | YEAR_UNIT);
+	// "Force" a tick with all units (draws everything, since we're only drawing what we need)
+    force_tick(ALL_UNITS);
+	
+	// "Force" a battery update with the current battery status
+	handle_battery(battery_state_service_peek());
 }
 
 void window_unload(Window *window) {
-    if (icon_bitmap) {
-        gbitmap_destroy(icon_bitmap);
-    }
-    
     text_layer_destroy(time_layer);
     text_layer_destroy(date_layer);
-    
-    text_layer_destroy(temperature_layer);
-    bitmap_layer_destroy(icon_layer);
+	
+    if(weather_icon_bitmap)
+        gbitmap_destroy(weather_icon_bitmap);
+    text_layer_destroy(weather_temperature_layer);
+    bitmap_layer_destroy(weather_icon_layer);
     layer_destroy(weather_layer);
+	
+	if(statusbar_battery_bitmap)
+		gbitmap_destroy(statusbar_battery_bitmap);
+	bitmap_layer_destroy(statusbar_battery_layer);
+	layer_destroy(statusbar_layer);
     
     fonts_unload_custom_font(futura_18);
     fonts_unload_custom_font(futura_25);
@@ -299,4 +351,28 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
 	// TOOD: Tell don't ask
     if(weather_needs_update(weather, prefs->weather_update_freq))
         weather_request_update();
+}
+
+void handle_battery(BatteryChargeState battery) {
+	uint32_t new_battery_resource = get_resource_for_battery_state(battery);
+	if(!statusbar_battery_bitmap || new_battery_resource != statusbar_battery_resource) {
+		statusbar_battery_resource = new_battery_resource;
+		
+		if(statusbar_battery_bitmap)
+			gbitmap_destroy(statusbar_battery_bitmap);
+		statusbar_battery_bitmap = gbitmap_create_with_resource(statusbar_battery_resource);
+		bitmap_layer_set_bitmap(statusbar_battery_layer, statusbar_battery_bitmap);
+		
+		// TODO: Why is this needed to redraw the bitmap?
+		force_tick(ALL_UNITS);
+	}
+}
+
+
+
+void force_tick(TimeUnits units_changed) {
+    time_t then = time(NULL);
+    struct tm *now = localtime(&then);
+	
+    handle_tick(now, units_changed);
 }

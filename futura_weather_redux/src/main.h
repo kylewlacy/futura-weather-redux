@@ -3,12 +3,16 @@
 
 #include "pebble.h"
 
+#define ALL_UNITS SECOND_UNIT | MINUTE_UNIT | HOUR_UNIT | DAY_UNIT | MONTH_UNIT | YEAR_UNIT
+
 void load_preferences();
 void save_preferences();
 void send_preferences();
 
 void update_weather_info(Weather *weather);
 uint32_t get_resource_for_weather_conditions(uint32_t conditions);
+
+uint32_t get_resource_for_battery_state(BatteryChargeState battery);
 
 void out_sent_handler(DictionaryIterator *sent, void *context);
 void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context);
@@ -22,5 +26,8 @@ void window_unload(Window *window);
 void deinit();
 
 void handle_tick(struct tm *now, TimeUnits units_changed);
+void handle_battery(BatteryChargeState battery);
+
+void force_tick(TimeUnits units_changed);
 
 #endif
