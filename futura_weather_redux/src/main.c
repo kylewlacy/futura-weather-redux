@@ -29,38 +29,6 @@ static GBitmap *statusbar_battery_bitmap = NULL;
 static Preferences *prefs;
 static Weather *weather;
 
-void update_weather_info(Weather *weather) {
-    if(weather->conditions % 1000) {
-        static char temperature_text[8];
-		int temperature = weather_convert_temperature(weather->temperature, prefs->temp_format);
-		
-        snprintf(temperature_text, 8, "%d\u00B0", temperature);
-        text_layer_set_text(weather_temperature_layer, temperature_text);
-        
-        if(10 <= temperature && temperature <= 99) {
-            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19+3, 72, 80));
-            text_layer_set_font(weather_temperature_layer, futura_35);
-        }
-        else if((0 <= temperature && temperature <= 9) || (-9 <= temperature && temperature <= -1)) {
-            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19, 72, 80));
-            text_layer_set_font(weather_temperature_layer, futura_40);
-        }
-        else if((100 <= temperature) || (-99 <= temperature && temperature <= -10)) {
-            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19+3, 72, 80));
-            text_layer_set_font(weather_temperature_layer, futura_28);
-        }
-        else {
-            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19+6, 72, 80));
-            text_layer_set_font(weather_temperature_layer, futura_25);
-        }
-        
-        if(weather_icon_bitmap)
-            gbitmap_destroy(weather_icon_bitmap);
-        weather_icon_bitmap = gbitmap_create_with_resource(get_resource_for_weather_conditions(weather->conditions));
-        bitmap_layer_set_bitmap(weather_icon_layer, weather_icon_bitmap);
-    }
-}
-
 uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
 	bool is_day = conditions >= 1000;
     switch((conditions - (conditions % 100)) % 1000) {
@@ -144,8 +112,6 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
     return RESOURCE_ID_ICON_CLOUD_ERROR;
 }
 
-
-
 uint32_t get_resource_for_battery_state(BatteryChargeState battery) {
 	if((battery.is_charging || battery.is_plugged) && battery.charge_percent > 99)
 		return RESOURCE_ID_CHARGED;
@@ -178,6 +144,47 @@ uint32_t get_resource_for_battery_state(BatteryChargeState battery) {
 
 
 
+void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
+	if(old_prefs == NULL || old_prefs->temp_format != new_prefs->temp_format) {
+		if(!weather_needs_update(weather, new_prefs->weather_update_freq))
+			update_weather_info(weather);
+	}
+}
+
+void update_weather_info(Weather *weather) {
+    if(weather->conditions % 1000) {
+        static char temperature_text[8];
+		int temperature = weather_convert_temperature(weather->temperature, prefs->temp_format);
+		
+        snprintf(temperature_text, 8, "%d\u00B0", temperature);
+        text_layer_set_text(weather_temperature_layer, temperature_text);
+        
+        if(10 <= temperature && temperature <= 99) {
+            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19+3, 72, 80));
+            text_layer_set_font(weather_temperature_layer, futura_35);
+        }
+        else if((0 <= temperature && temperature <= 9) || (-9 <= temperature && temperature <= -1)) {
+            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19, 72, 80));
+            text_layer_set_font(weather_temperature_layer, futura_40);
+        }
+        else if((100 <= temperature) || (-99 <= temperature && temperature <= -10)) {
+            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19+3, 72, 80));
+            text_layer_set_font(weather_temperature_layer, futura_28);
+        }
+        else {
+            layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19+6, 72, 80));
+            text_layer_set_font(weather_temperature_layer, futura_25);
+        }
+        
+        if(weather_icon_bitmap)
+            gbitmap_destroy(weather_icon_bitmap);
+        weather_icon_bitmap = gbitmap_create_with_resource(get_resource_for_weather_conditions(weather->conditions));
+        bitmap_layer_set_bitmap(weather_icon_layer, weather_icon_bitmap);
+    }
+}
+
+
+
 void out_sent_handler(DictionaryIterator *sent, void *context) {
 }
 
@@ -195,8 +202,10 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 	}
 	
 	if(set_preferences) {
+		Preferences old_prefs = *prefs;
+		
 		preferences_set(prefs, received);
-		update_weather_info(weather);		// In case the user changed temperature format
+		change_preferences(&old_prefs, prefs);
 		
 		preferences_save(prefs);
 	}
@@ -291,9 +300,10 @@ void window_load(Window *window) {
 	layer_add_child(window_layer, statusbar_layer);
 	
 	
-	// Draw weather info if the cache is recent enough
-	if(!weather_needs_update(weather, prefs->weather_update_freq))
-		update_weather_info(weather);
+	
+	change_preferences(NULL, prefs);
+	
+	
 	
 	tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
 	battery_state_service_subscribe(handle_battery);

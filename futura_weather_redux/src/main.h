@@ -9,10 +9,11 @@ void load_preferences();
 void save_preferences();
 void send_preferences();
 
-void update_weather_info(Weather *weather);
 uint32_t get_resource_for_weather_conditions(uint32_t conditions);
-
 uint32_t get_resource_for_battery_state(BatteryChargeState battery);
+
+void change_preferences(Preferences *old_prefs, Preferences *new_prefs);
+void update_weather_info(Weather *weather);
 
 void out_sent_handler(DictionaryIterator *sent, void *context);
 void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context);

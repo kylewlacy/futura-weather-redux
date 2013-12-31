@@ -48,8 +48,8 @@ void preferences_set(Preferences *prefs, DictionaryIterator *iter) {
 	Tuple *temp_format = dict_find(iter, TEMP_FORMAT_MSG_KEY);
 	Tuple *weather_update_frequency = dict_find(iter, WEATHER_UPDATE_FREQ_MSG_KEY);
 	
-	if(temp_format && (temp_format->value->int32 != prefs->temp_format))
+	if(temp_format)
 		prefs->temp_format = temp_format->value->int32;
-	if(weather_update_frequency && (weather_update_frequency->value->int32 != (int)prefs->weather_update_freq))
+	if(weather_update_frequency)
 		prefs->weather_update_freq = weather_update_frequency->value->int32;
 }
