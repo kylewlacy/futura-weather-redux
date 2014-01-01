@@ -56,12 +56,10 @@ void preferences_set(Preferences *prefs, DictionaryIterator *iter) {
 	Tuple *weather_update_frequency = dict_find(iter, WEATHER_UPDATE_FREQ_MSG_KEY);
 	Tuple *statusbar = dict_find(iter, STATUSBAR_MSG_KEY);
 	
-	if(temp_format)
+	if(temp_format != NULL)
 		prefs->temp_format = temp_format->value->int32;
-	if(weather_update_frequency)
+	if(weather_update_frequency != NULL)
 		prefs->weather_update_freq = weather_update_frequency->value->int32;
-	if(statusbar != NULL) {
+	if(statusbar != NULL)
 		prefs->statusbar = statusbar->value->int32 != 0;
-		APP_LOG(APP_LOG_LEVEL_INFO, "Statusbar is %s", prefs->statusbar ? "on" : "off");
-	}
 }
