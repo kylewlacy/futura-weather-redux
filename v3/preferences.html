@@ -31,8 +31,13 @@
 				var params = queryStringParams();
 				for(var key in params) {
 					var elements = document.getElementsByName(key);
-					if(elements.length > 0)
-						elements[0].value = params[key];
+					if(elements.length > 0) {
+						var e = elements[0];
+						if(e.type == "checkbox")
+							e.checked = (params[key] != 0);
+						else
+							e.value = params[key];
+					}
 				}
 			};
 			
@@ -42,9 +47,12 @@
 				var children = e.target.childNodes;
 				for(var i = 0; i < children.length; i++) {
 					if(children[i].name && children[i].value) {
-						params[children[i].name] = children[i].value;
+						if(children[i].type == "checkbox")
+							params[children[i].name] = children[i].checked ? 1 : 0;
+						else
+							params[children[i].name] = children[i].value;
 					}
-				}		
+				}
 				
 				window.location = "pebblejs://close#" + JSON.stringify(params);
 				return false;
@@ -71,6 +79,8 @@
 				<option value="1">Open Weather Map</option>
 				<option value="2">Yahoo! Weather</option>
 			</select>
+			<label for="statusbar">Show statusbar</label>
+			<input name="statusbar" type="checkbox" />
 			<button name="save" type="submit">Save</button>
 		</form>
 	</body>
