@@ -6,6 +6,7 @@
 typedef struct {
 	TempFormat temp_format;
 	time_t weather_update_freq;
+	bool statusbar;
 } Preferences;
 
 Preferences* preferences_load();

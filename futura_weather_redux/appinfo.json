@@ -16,7 +16,8 @@
 		"conditions": 4,
 		"setPrefs": 5,
 		"tempFormat": 6,
-		"weatherUpdateFreq": 7
+		"weatherUpdateFreq": 7,
+		"statusbar": 8
 	},
 	"resources": {
 		"media": [

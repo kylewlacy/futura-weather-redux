@@ -149,6 +149,9 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 		if(!weather_needs_update(weather, new_prefs->weather_update_freq))
 			update_weather_info(weather);
 	}
+	if(old_prefs == NULL || old_prefs->statusbar != new_prefs->statusbar) {
+		layer_set_hidden(statusbar_layer, !new_prefs->statusbar);
+	}
 }
 
 void update_weather_info(Weather *weather) {

@@ -2,7 +2,8 @@ var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.
 
 var prefs = {
 	"tempFormat": 1,
-	"weatherUpdateFreq": 10 * 60
+	"weatherUpdateFreq": 10 * 60,
+	"statusbar": 0
 };
 
 var weather = {
@@ -89,7 +90,7 @@ Pebble.addEventListener("ready", function(e) { prevMessages = {}; });
 Pebble.addEventListener("appmessage", function(e) {
 	if(e.payload["setPrefs"] == 1) {
 		for(var key in prefs)
-			if(e.payload[key]) { prefs[key] = e.payload[key]; }
+			if(e.payload[key] !== "undefined") { prefs[key] = e.payload[key]; }
 	}
 	else if(e.payload["requestWeather"] == 1) {
 		fetchWeather();
@@ -97,7 +98,7 @@ Pebble.addEventListener("appmessage", function(e) {
 	else {
 		console.warn("Received unknown app message:");
 		for(var key in e.payload)
-			console.log("  " + key + ": " + e.payload[key]);
+			console.log("	 " + key + ": " + e.payload[key]);
 	}
 });
 
@@ -109,7 +110,8 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	if(e && e.response) {
 		var newPrefs = JSON.parse(e.response);
 		for(var key in prefs) {
-			if(newPrefs[key]) { prefs[key] = parseInt(newPrefs[key]); }
+			if(newPrefs[key] !== "undefined")
+				prefs[key] = parseInt(newPrefs[key]);
 		}
 		
 		sendPreferences(prefs);
@@ -131,14 +133,14 @@ Pebble.addEventListener("webviewclosed", function(e) {
  
  // shortcuts for easier to read formulas
  
- var PI   = Math.PI,
- sin  = Math.sin,
- cos  = Math.cos,
- tan  = Math.tan,
+ var PI		= Math.PI,
+ sin	= Math.sin,
+ cos	= Math.cos,
+ tan	= Math.tan,
  asin = Math.asin,
  atan = Math.atan2,
  acos = Math.acos,
- rad  = PI / 180;
+ rad	= PI / 180;
  
  // sun calculations are based on http://aa.quae.nl/en/reken/zonpositie.html formulas
  
@@ -213,12 +215,12 @@ Pebble.addEventListener("webviewclosed", function(e) {
  
  SunCalc.getPosition = function (date, lat, lng) {
  
- var lw  = rad * -lng,
+ var lw	 = rad * -lng,
  phi = rad * lat,
- d   = toDays(date),
+ d	 = toDays(date),
  
- c  = getSunCoords(d),
- H  = getSiderealTime(d, lw) - c.ra;
+ c	= getSunCoords(d),
+ H	= getSiderealTime(d, lw) - c.ra;
  
  return {
  azimuth: getAzimuth(H, phi, c.dec),
@@ -230,13 +232,13 @@ Pebble.addEventListener("webviewclosed", function(e) {
  // sun times configuration (angle, morning name, evening name)
  
  var times = [
-			  [-0.83, 'sunrise',       'sunset'      ],
-			  [ -0.3, 'sunriseEnd',    'sunsetStart' ],
-			  [   -6, 'dawn',          'dusk'        ],
-			  [  -12, 'nauticalDawn',  'nauticalDusk'],
-			  [  -18, 'nightEnd',      'night'       ],
-			  [    6, 'goldenHourEnd', 'goldenHour'  ]
-			  ];
+				[-0.83, 'sunrise',			 'sunset'			 ],
+				[ -0.3, 'sunriseEnd',		 'sunsetStart' ],
+				[		-6, 'dawn',					 'dusk'				 ],
+				[	 -12, 'nauticalDawn',	 'nauticalDusk'],
+				[	 -18, 'nightEnd',			 'night'			 ],
+				[		 6, 'goldenHourEnd', 'goldenHour'	 ]
+				];
  
  // adds a custom time to the times config
  
@@ -267,11 +269,11 @@ Pebble.addEventListener("webviewclosed", function(e) {
  
  SunCalc.getTimes = function (date, lat, lng) {
  
- var lw  = rad * -lng,
+ var lw	 = rad * -lng,
  phi = rad * lat,
- d   = toDays(date),
+ d	 = toDays(date),
  
- n  = getJulianCycle(d, lw),
+ n	= getJulianCycle(d, lw),
  ds = getApproxTransit(0, lw, n),
  
  M = getSolarMeanAnomaly(ds),
@@ -319,11 +321,11 @@ Pebble.addEventListener("webviewclosed", function(e) {
  
  var L = rad * (218.316 + 13.176396 * d), // ecliptic longitude
  M = rad * (134.963 + 13.064993 * d), // mean anomaly
- F = rad * (93.272 + 13.229350 * d),  // mean distance
+ F = rad * (93.272 + 13.229350 * d),	// mean distance
  
- l  = L + rad * 6.289 * sin(M), // longitude
- b  = rad * 5.128 * sin(F),     // latitude
- dt = 385001 - 20905 * cos(M);  // distance to the moon in km
+ l	= L + rad * 6.289 * sin(M), // longitude
+ b	= rad * 5.128 * sin(F),			// latitude
+ dt = 385001 - 20905 * cos(M);	// distance to the moon in km
  
  return {
  ra: getRightAscension(l, b),
@@ -334,9 +336,9 @@ Pebble.addEventListener("webviewclosed", function(e) {
  
  SunCalc.getMoonPosition = function (date, lat, lng) {
  
- var lw  = rad * -lng,
+ var lw	 = rad * -lng,
  phi = rad * lat,
- d   = toDays(date),
+ d	 = toDays(date),
  
  c = getMoonCoords(d),
  H = getSiderealTime(d, lw) - c.ra,
