@@ -60,32 +60,21 @@ function fetchWeather() {
 }
 
 function sendWeather(weather) {
-	sendDiffMessage("weather", {"setWeather": 1}, {
+	Pebble.sendAppMessage(mergeObjects({
 		"temperature": Math.round(weather.temperature * 100),
 		"conditions": weather.conditions + (weather.isDay ? 1000 : 0)
-	});
+	}, {"setWeather": 1}));
 }
 
 function sendPreferences(prefs) {
-	sendDiffMessage("preferences", {"setPrefs": 1}, prefs)
+	Pebble.sendAppMessage(mergeObjects(prefs, {"setPrefs": 1}));
 }
 
 
-function sendDiffMessage(messageKey, bareMessage, message) {
-	var clientMessage = bareMessage;
-	var diffMessage = {};
-	
-	var lastMessage = prevMessages[messageKey];
-	if(!lastMessage)
-		lastMessage = {};
-	
-	for(var key in message) {
-		if(message[key] != lastMessage[key]) { diffMessage[key] = message[key]; }
-	}
-	for(var key in diffMessage) { clientMessage[key] = diffMessage[key]; }
-	
-	Pebble.sendAppMessage(clientMessage);
-	prevMessages[messageKey] = message;
+function mergeObjects(a, b) {
+	for(var key in b)
+		a[key] = b[key];
+	return a;
 }
 
 function queryify(obj) {
