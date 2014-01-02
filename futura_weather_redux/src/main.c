@@ -145,12 +145,46 @@ uint32_t get_resource_for_battery_state(BatteryChargeState battery) {
 
 
 void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
+	// old_prefs will be NULL for initialization (app first loaded)
 	if(old_prefs == NULL || old_prefs->temp_format != new_prefs->temp_format) {
 		if(!weather_needs_update(weather, new_prefs->weather_update_freq))
 			update_weather_info(weather);
 	}
 	if(old_prefs == NULL || old_prefs->statusbar != new_prefs->statusbar) {
-		layer_set_hidden(statusbar_layer, !new_prefs->statusbar);
+		GRect statusbar_frame = GRect(0, 0, 144, 15);
+		GRect time_frame = GRect(0, 2, 144, 162);
+		GRect date_frame = GRect(1, 74, 144, 106);
+		
+		if(new_prefs->statusbar) {
+			time_frame.origin.y += 8;
+			date_frame.origin.y += 4;
+		}
+		else {
+			statusbar_frame.origin.y -= statusbar_frame.size.h;
+		}
+		
+		if(old_prefs == NULL) {
+			layer_set_frame(statusbar_layer, statusbar_frame);
+			layer_set_frame(text_layer_get_layer(time_layer), time_frame);
+			layer_set_frame(text_layer_get_layer(date_layer), date_frame);
+		}
+		else {
+			PropertyAnimation *statusbar_animation = property_animation_create_layer_frame(statusbar_layer, NULL, &statusbar_frame);
+			PropertyAnimation *time_animation = property_animation_create_layer_frame(text_layer_get_layer(time_layer), NULL, &time_frame);
+			PropertyAnimation *date_animation = property_animation_create_layer_frame(text_layer_get_layer(date_layer), NULL, &date_frame);
+			
+			animation_set_delay(&statusbar_animation->animation, 0);
+			animation_set_delay(&time_animation->animation, 100);
+			animation_set_delay(&date_animation->animation, 200);
+			
+			animation_set_duration(&statusbar_animation->animation, 250);
+			animation_set_duration(&time_animation->animation, 250);
+			animation_set_duration(&date_animation->animation, 250);
+			
+			animation_schedule(&statusbar_animation->animation);
+			animation_schedule(&time_animation->animation);
+			animation_schedule(&date_animation->animation);
+		}
 	}
 }
 
