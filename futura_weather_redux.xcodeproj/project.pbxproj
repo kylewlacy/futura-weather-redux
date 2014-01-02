@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2796EBC1186EB664005ABFB0 /* weather.c in Sources */ = {isa = PBXBuildFile; fileRef = 2796EBC0186EB664005ABFB0 /* weather.c */; };
+		27BF660918750B6B0075ABB4 /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 27BF660818750B6B0075ABB4 /* utils.c */; };
 		27CDBDBB186B5A3C00CA2913 /* libpebble.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 27CDBDBA186B5A3C00CA2913 /* libpebble.a */; };
 		27D6231F186C1A5000A9653B /* pebble-js-app.js in Sources */ = {isa = PBXBuildFile; fileRef = 27D6231A186C1A5000A9653B /* pebble-js-app.js */; };
 		27D62320186C1A5000A9653B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 27D6231B186C1A5000A9653B /* main.c */; };
@@ -74,6 +75,8 @@
 		27BF66021872A4F60075ABB4 /* snow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = snow.png; sourceTree = "<group>"; };
 		27BF66031872A4F60075ABB4 /* thunder.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = thunder.png; sourceTree = "<group>"; };
 		27BF66041872A4F60075ABB4 /* wind.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = wind.png; sourceTree = "<group>"; };
+		27BF660718750B390075ABB4 /* utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
+		27BF660818750B6B0075ABB4 /* utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = utils.c; sourceTree = "<group>"; };
 		27CDBD7B186B598E00CA2913 /* futura_weather_redux */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = futura_weather_redux; sourceTree = BUILT_PRODUCTS_DIR; };
 		27CDBDBA186B5A3C00CA2913 /* libpebble.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpebble.a; path = "../../../../../.pebble/PebbleSDK-2.0-BETA4/Pebble/lib/libpebble.a"; sourceTree = "<group>"; };
 		27D622CC186C1A5000A9653B /* appinfo.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = appinfo.json; sourceTree = "<group>"; usesTabs = 1; };
@@ -223,6 +226,8 @@
 			children = (
 				27D62319186C1A5000A9653B /* js */,
 				2796EBBE186EB5A1005ABFB0 /* config.h */,
+				27BF660718750B390075ABB4 /* utils.h */,
+				27BF660818750B6B0075ABB4 /* utils.c */,
 				27D6231B186C1A5000A9653B /* main.c */,
 				27D62321186EA1EE00A9653B /* main.h */,
 				27D62325186EAFBD00A9653B /* preferences.c */,
@@ -292,6 +297,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27BF660918750B6B0075ABB4 /* utils.c in Sources */,
 				27D62326186EAFBD00A9653B /* preferences.c in Sources */,
 				27D6231F186C1A5000A9653B /* pebble-js-app.js in Sources */,
 				2796EBC1186EB664005ABFB0 /* weather.c in Sources */,
