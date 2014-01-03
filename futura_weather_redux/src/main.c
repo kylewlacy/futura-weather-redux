@@ -83,6 +83,59 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 	}
 }
 
+void set_weather_visible(bool visible, bool animate) {
+	// TODO: Get the 'intended' value of each (consider the statusbar, for example)
+	GRect time_frame = default_time_frame;
+	GRect date_frame = default_date_frame;
+	GRect weather_frame = default_weather_frame;
+	
+	if(!visible) {
+		time_frame.origin.y = 30;
+		date_frame.origin.y = 103;
+		weather_frame.origin.y = 168;
+	}
+	
+	if(animate) {
+		if(layer_get_hidden(weather_layer) && visible)
+			layer_set_hidden(weather_layer, !visible);
+		APP_LOG(APP_LOG_LEVEL_INFO, "Animating (visible %s)", visible ? "true" : "false");
+		PropertyAnimation *time_animation = property_animation_create_layer_frame(text_layer_get_layer(time_layer), NULL, &time_frame);
+		PropertyAnimation *date_animation = property_animation_create_layer_frame(text_layer_get_layer(date_layer), NULL, &date_frame);
+		PropertyAnimation *weather_animation = property_animation_create_layer_frame(weather_layer, NULL, &weather_frame);
+		
+		animation_set_delay(&time_animation->animation, 300);
+		animation_set_delay(&date_animation->animation, 150);
+		animation_set_delay(&weather_animation->animation, 0);
+		
+		animation_set_duration(&time_animation->animation, 350);
+		animation_set_duration(&date_animation->animation, 350);
+		animation_set_duration(&weather_animation->animation, 500);
+		
+		animation_set_curve(&weather_animation->animation, visible ? AnimationCurveEaseOut : AnimationCurveEaseIn);
+		
+		// time_animation is the animation that will end the latest
+		AnimationHandlers animation_handlers = { .stopped = set_weather_visible_animation_stopped_handler };
+		animation_set_handlers(&time_animation->animation, animation_handlers, visible ? (void*)1 : (void*)0);
+		
+		animation_schedule(&time_animation->animation);
+		animation_schedule(&date_animation->animation);
+		animation_schedule(&weather_animation->animation);
+	}
+	else {
+		APP_LOG(APP_LOG_LEVEL_INFO, "Not animating (visible %s)", visible ? "true" : "false");
+		layer_set_frame(text_layer_get_layer(time_layer), time_frame);
+		layer_set_frame(text_layer_get_layer(date_layer), date_frame);
+		layer_set_hidden(weather_layer, !visible);
+	}
+}
+
+void set_weather_visible_animation_stopped_handler(Animation *animation, bool finished, void *context) {
+	if(finished)
+		set_weather_visible(context != 0, false);
+}
+
+
+
 void update_weather_info(Weather *weather) {
     if(weather->conditions % 1000) {
         static char temperature_text[8];

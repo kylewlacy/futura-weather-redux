@@ -13,6 +13,9 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions);
 uint32_t get_resource_for_battery_state(BatteryChargeState battery);
 
 void change_preferences(Preferences *old_prefs, Preferences *new_prefs);
+void set_weather_visible(bool visible, bool animate);
+void set_weather_visible_animation_stopped_handler(Animation *animation, bool finished, void *context);
+
 void update_weather_info(Weather *weather);
 
 void out_sent_handler(DictionaryIterator *sent, void *context);
