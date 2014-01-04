@@ -349,9 +349,11 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
         text_layer_set_text(date_layer, date_text);
     }
     
-	// TOOD: Tell don't ask
-    if(weather_needs_update(weather, prefs->weather_update_freq))
+	bool outdated = weather_needs_update(weather, prefs->weather_outdated_time);
+    if(outdated || weather_needs_update(weather, prefs->weather_update_freq))
         weather_request_update();
+	if(outdated)
+		set_weather_visible(false, true);
 }
 
 void handle_battery(BatteryChargeState battery) {

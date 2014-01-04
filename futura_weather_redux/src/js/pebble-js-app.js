@@ -1,9 +1,11 @@
-var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
+//var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
+var configURL = "http://192.168.1.12:8000/v3/preferences.html";
 
 var prefs = {
 	"tempFormat": 1,
 	"weatherUpdateFreq": 10 * 60,
-	"statusbar": 0
+	"statusbar": 0,
+	"weatherOutdatedTime": 60*60
 };
 
 var weather = {

@@ -17,7 +17,8 @@
 		"setPrefs": 5,
 		"tempFormat": 6,
 		"weatherUpdateFreq": 7,
-		"statusbar": 8
+		"statusbar": 8,
+		"weatherOutdatedTime": 9
 	},
 	"resources": {
 		"media": [
