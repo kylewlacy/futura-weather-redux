@@ -80,6 +80,10 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 			animation_schedule(&time_animation->animation);
 			animation_schedule(&date_animation->animation);
 		}
+		
+		if(old_prefs == NULL) {
+			set_weather_visible(!weather_needs_update(weather, new_prefs->weather_update_freq), false);
+		}
 	}
 }
 
@@ -96,9 +100,7 @@ void set_weather_visible(bool visible, bool animate) {
 	}
 	
 	if(animate) {
-		if(layer_get_hidden(weather_layer) && visible)
-			layer_set_hidden(weather_layer, !visible);
-		APP_LOG(APP_LOG_LEVEL_INFO, "Animating (visible %s)", visible ? "true" : "false");
+		layer_set_hidden(weather_layer, !visible);
 		PropertyAnimation *time_animation = property_animation_create_layer_frame(text_layer_get_layer(time_layer), NULL, &time_frame);
 		PropertyAnimation *date_animation = property_animation_create_layer_frame(text_layer_get_layer(date_layer), NULL, &date_frame);
 		PropertyAnimation *weather_animation = property_animation_create_layer_frame(weather_layer, NULL, &weather_frame);
@@ -114,24 +116,24 @@ void set_weather_visible(bool visible, bool animate) {
 		animation_set_curve(&weather_animation->animation, visible ? AnimationCurveEaseOut : AnimationCurveEaseIn);
 		
 		// time_animation is the animation that will end the latest
-		AnimationHandlers animation_handlers = { .stopped = set_weather_visible_animation_stopped_handler };
-		animation_set_handlers(&time_animation->animation, animation_handlers, visible ? (void*)1 : (void*)0);
+		AnimationHandlers weather_animation_handlers = { .stopped = set_weather_visible_animation_stopped_handler };
+		animation_set_handlers(&weather_animation->animation, weather_animation_handlers, visible ? (void*)1 : (void*)0);
 		
 		animation_schedule(&time_animation->animation);
 		animation_schedule(&date_animation->animation);
 		animation_schedule(&weather_animation->animation);
 	}
 	else {
-		APP_LOG(APP_LOG_LEVEL_INFO, "Not animating (visible %s)", visible ? "true" : "false");
 		layer_set_frame(text_layer_get_layer(time_layer), time_frame);
 		layer_set_frame(text_layer_get_layer(date_layer), date_frame);
+		layer_set_frame(weather_layer, weather_frame);
 		layer_set_hidden(weather_layer, !visible);
 	}
 }
 
 void set_weather_visible_animation_stopped_handler(Animation *animation, bool finished, void *context) {
 	if(finished)
-		set_weather_visible(context != 0, false);
+		layer_set_hidden(weather_layer, context == 0);
 }
 
 
@@ -165,6 +167,8 @@ void update_weather_info(Weather *weather) {
             gbitmap_destroy(weather_icon_bitmap);
         weather_icon_bitmap = gbitmap_create_with_resource(get_resource_for_weather_conditions(weather->conditions));
         bitmap_layer_set_bitmap(weather_icon_layer, weather_icon_bitmap);
+		
+		set_weather_visible(true, true);
     }
 }
 
