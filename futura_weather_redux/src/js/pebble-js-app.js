@@ -88,7 +88,6 @@ function fetchWeatherYahoo() {
             if (req.status == 200) {
                 response = JSON.parse(req.responseText);
                 if (response) {
-                    woeid = response.woeid;
                     woeid = response.query.results.Result.woeid;
                     getWeatherYahooByWoeid(woeid);
                 }
