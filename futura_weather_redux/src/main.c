@@ -3,6 +3,7 @@
 #include "preferences.h"
 #include "weather.h"
 #include "main.h"
+#include "futura_lang.h"
 
 static Window *window;
 
@@ -356,8 +357,12 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
     }
     
     if(units_changed & DAY_UNIT) {
-        static char date_text[11];
-        strftime(date_text, 11, "%a %b %d",  now);
+        /* The length 18 should be enougth to fit the most common language abbr */
+        static char date_text[18];
+        /*TODO: Read lang from preferences, for lang numbers se futura_lang.h */
+        int lang = 0; //Hardcoded to en_US until pref is in place
+        int wday = (now->tm_wday>0)?now->tm_wday:6;
+        snprintf(date_text, 18, "%s %s %d", day_names[lang][now->tm_wday-1], month_names[lang][now->tm_mon], now->tm_mday);
         text_layer_set_text(date_layer, date_text);
     }
     
