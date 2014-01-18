@@ -40,9 +40,13 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
         case 300:
             return RESOURCE_ID_WEATHER_DRIZZLE;
         case 500:
+            switch(conditions % 1000) {
+                case 511:
+                    return RESOURCE_ID_WEATHER_RAIN_SNOW;
+            }
             return RESOURCE_ID_WEATHER_RAIN;
         case 600:
-            switch(conditions % 100) {
+            switch(conditions % 1000) {
                 case 611:
                     return RESOURCE_ID_WEATHER_SLEET;
                 case 612:
@@ -56,14 +60,14 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
             }
             return RESOURCE_ID_WEATHER_SNOW;
         case 700:
-            switch(conditions % 100) {
+            switch(conditions % 1000) {
                 case 731:
                 case 781:
                     return RESOURCE_ID_WEATHER_WIND;
             }
             return RESOURCE_ID_WEATHER_FOG;
         case 800:
-            switch(conditions % 100) {
+            switch(conditions % 1000) {
                 case 0:
 					if(is_day)
 						return RESOURCE_ID_WEATHER_CLEAR_DAY;
@@ -78,7 +82,7 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
                     return RESOURCE_ID_WEATHER_CLOUDY;
             }
         case 900:
-            switch(conditions % 100) {
+            switch(conditions % 1000) {
                 case 0:
                 case 1:
                 case 2:
