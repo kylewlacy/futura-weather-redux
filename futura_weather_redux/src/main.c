@@ -41,6 +41,10 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
         case 300:
             return RESOURCE_ID_WEATHER_DRIZZLE;
         case 500:
+            switch(conditions % 100) {
+                case 511:
+                    return RESOURCE_ID_WEATHER_RAIN_SNOW;
+            }
             return RESOURCE_ID_WEATHER_RAIN;
         case 600:
             switch(conditions % 100) {
