@@ -54,9 +54,6 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
                     return RESOURCE_ID_WEATHER_RAIN_SLEET;
                 case 615:
                 case 616:
-                case 620:
-                case 621:
-                case 622:
                     return RESOURCE_ID_WEATHER_RAIN_SNOW;
             }
             return RESOURCE_ID_WEATHER_SNOW;
