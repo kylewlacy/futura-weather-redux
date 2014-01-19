@@ -66,30 +66,30 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
             return RESOURCE_ID_WEATHER_FOG;
         case 800:
             switch(conditions % 1000) {
-                case 0:
+                case 800:
 					if(is_day)
 						return RESOURCE_ID_WEATHER_CLEAR_DAY;
 					return RESOURCE_ID_WEATHER_CLEAR_NIGHT;
-                case 1:
-                case 2:
+                case 801:
+                case 802:
 					if(is_day)
 						return RESOURCE_ID_WEATHER_PARTLY_CLOUDY_DAY;
 					return RESOURCE_ID_WEATHER_PARTLY_CLOUDY_NIGHT;
-                case 3:
-                case 4:
+                case 803:
+                case 804:
                     return RESOURCE_ID_WEATHER_CLOUDY;
             }
         case 900:
             switch(conditions % 1000) {
-                case 0:
-                case 1:
-                case 2:
+                case 900:
+                case 901:
+                case 902:
                     return RESOURCE_ID_WEATHER_WIND;
-                case 3:
+                case 903:
                     return RESOURCE_ID_WEATHER_HOT;
-                case 4:
+                case 904:
                     return RESOURCE_ID_WEATHER_COLD;
-                case 5:
+                case 905:
                     return RESOURCE_ID_WEATHER_WIND;
                 case 950:
                 case 951:
