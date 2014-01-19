@@ -18,9 +18,9 @@ static const char *month_names[][12] = {
     { "Jan", "Feb", "Mar", "Apr", "Maj", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec" },
     { "Jan", "Feb", "Mar", "Apr", "Maj", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec" },
     { "Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec" },
-    { "Janv", "FéVr", "Mars", "Avril", "Mai", "Juin", "Juil", "AoûT", "Sept", "Oct", "Nov", "DéC" },
+    { "Janv", "Févr", "Mars", "Avril", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc" },
     { "Tammi", "Helmi", "Maalis", "Huhti", "Touko", "Kesä", "Heinä", "Elo", "Syys", "Loka", "Marras", "Joulu" },
-    { "Jan", "Feb", "MäR", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez" },
+    { "Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez" },
     { "Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic" },
     { "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic" },
     { "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic" }
@@ -37,6 +37,6 @@ static const char *day_names[][7] = {
     { "Ma", "Ti", "Ke", "To", "Pe", "La", "Su" },
     { "Mo", "Di", "Mi", "Do", "Fr", "Sa", "So" },
     { "Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom" },
-    { "Lun", "Mar", "Mié", "Jue", "Vie", "SáB", "Dom" },
-    { "Lun", "Mar", "Mié", "Jue", "Vie", "SáB", "Dom" }
+    { "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom" },
+    { "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom" }
 };
