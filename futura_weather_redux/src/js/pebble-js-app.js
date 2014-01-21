@@ -12,7 +12,6 @@ var weather = {
 	"lastUpdate": 0
 };
 var prevMessages = {};
-var coords;
 
 var maxWeatherUpdateFreq = 10 * 60;
 
@@ -68,17 +67,10 @@ var yahooConditionToOpenWeatherMapCondition = {
   3200 : 0, //not available
 };
 
-function fetchWeatherYahoo() {
-    window.navigator.geolocation.getCurrentPosition(
-            function(pos) { coords = pos.coords; },
-            function(err) { console.warn("location error (" + err.code + "): " + err.message); },
-            { "timeout": 15000, "maximumAge": 60000 }
-            );
-		
+function fetchWeatherYahoo(coords) {
     var woeid = -1;
     var query = encodeURI("select woeid from geo.placefinder where text=\""+coords.latitude+","+coords.longitude + "\" and gflags=\"R\"");
     var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
-
     
     var response;
     var req = new XMLHttpRequest();
@@ -89,7 +81,7 @@ function fetchWeatherYahoo() {
                 response = JSON.parse(req.responseText);
                 if (response) {
                     woeid = response.query.results.Result.woeid;
-                    getWeatherYahooByWoeid(woeid);
+                    getWeatherYahooByWoeid(woeid,coords);
                 }
             } else {
                 console.log("Error");
@@ -99,7 +91,7 @@ function fetchWeatherYahoo() {
     req.send(null);
 }
 
-function getWeatherYahooByWoeid(woeid) {
+function getWeatherYahooByWoeid(woeid,coords) {
   //console.log("getWeatherYahooByWoeid " + woeid);
   var celsius = 1;
   var query = encodeURI("select item.condition from weather.forecast where woeid = " + woeid +
@@ -137,16 +129,7 @@ function getWeatherYahooByWoeid(woeid) {
   req.send(null);
 }
 
-
-
-function fetchWeatherOpenWeatherMap() {
-		window.navigator.geolocation.getCurrentPosition(
-			function(pos) { coords = pos.coords; },
-			function(err) { console.warn("location error (" + err.code + "): " + err.message); },
-			{ "timeout": 15000, "maximumAge": 60000 }
-		);
-		
-		
+function fetchWeatherOpenWeatherMap(coords) {
 		var response;
 		var req = new XMLHttpRequest();
 		req.open('GET', "http://api.openweathermap.org/data/2.5/find?" +
@@ -177,7 +160,39 @@ function fetchWeatherOpenWeatherMap() {
 		req.send(null);
 }
 
+function fetchWeatherFromPos(pos) {
+    //TODO: Check pref and call the correct weather service
+    //fetchWeatherOpenWeatherMap(pos.coords);
+    fetchWeatherYahoo(pos.coords);
+}
+
+function fetchWeather() {
+    //console.log("fetchWeather");
+    if(Math.round(Date.now()/1000) - weather.lastUpdate >= maxWeatherUpdateFreq) {
+        window.navigator.geolocation.getCurrentPosition(fetchWeatherFromPos,
+                locationError,
+                { "timeout": 15000, "maximumAge": 60000 });
+    }
+    else {
+        console.warn("Weather update requested too soon; loading from cache (" + (new Date()).toString() + ")");
+        sendWeather(weather);
+    }
+}
+
+function locationError(err) {
+    console.warn('location error (' + err.code + '): ' + err.message);
+    sendWeather({
+        "temperature": 0,
+        "conditions": 0,
+        "isDay": 0,
+        "lastUpdate": Math.round(now.getTime() / 1000)
+    });
+}
+
+
 function sendWeather(weather) {
+    //console.log("sendWeather temperature: " + weather.temperature);
+    //console.log("sendWeather conditions: " + weather.conditions);
 	Pebble.sendAppMessage(mergeObjects({
 		"temperature": Math.round(weather.temperature * 100),
 		"conditions": weather.conditions + (weather.isDay ? 1000 : 0)
@@ -202,7 +217,10 @@ function queryify(obj) {
 }
 
 
-Pebble.addEventListener("ready", function(e) { prevMessages = {}; });
+Pebble.addEventListener("ready", function(e) { 
+    prevMessages = {};  
+    fetchWeather();
+});
 
 Pebble.addEventListener("appmessage", function(e) {
 	if(e.payload["setPrefs"] == 1) {
@@ -210,15 +228,7 @@ Pebble.addEventListener("appmessage", function(e) {
 			if(e.payload[key] !== "undefined") { prefs[key] = e.payload[key]; }
 	}
 	else if(e.payload["requestWeather"] == 1) {
-        if(Math.round(Date.now()/1000) - weather.lastUpdate >= maxWeatherUpdateFreq) {
-            //TODO: Check pref and call the correct weather service
-            //fetchWeatherOpenWeatherMap();
-            fetchWeatherYahoo();
-        }
-        else {
-            console.warn("Weather update requested too soon; loading from cache (" + (new Date()).toString() + ")");
-            sendWeather(weather);
-        }
+        fetchWeather();
 	}
 	else {
 		console.warn("Received unknown app message:");
