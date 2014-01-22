@@ -13,6 +13,8 @@
  * 9: "no_NO"
  */
 
+#define MAX_LANG 9
+
 static const char *month_names[][12] = { 
     { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" },
     { "Jan", "Feb", "Mar", "Apr", "Maj", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec" },
@@ -23,7 +25,7 @@ static const char *month_names[][12] = {
     { "Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez" },
     { "Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic" },
     { "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic" },
-    { "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic" }
+    { "Jan", "Feb", "Mars", "Apr", "Mai", "Juni", "Juli", "Aug", "Sep", "Okt", "Nov", "Des" }
 };
 
 
@@ -38,5 +40,5 @@ static const char *day_names[][7] = {
     { "Mo", "Di", "Mi", "Do", "Fr", "Sa", "So" },
     { "Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom" },
     { "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom" },
-    { "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom" }
+    { "Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn" }
 };

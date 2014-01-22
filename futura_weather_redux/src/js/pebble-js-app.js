@@ -1,9 +1,11 @@
-var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
+var configURL = "http://snaggen.github.io/futura-weather-redux/v3/preferences.html";
 
 var prefs = {
 	"tempFormat": 1,
 	"weatherUpdateFreq": 10 * 60,
-	"statusbar": 0
+	"statusbar": 0,
+	"provider": 2,
+	"language": 0
 };
 
 var weather = {
@@ -161,13 +163,19 @@ function fetchWeatherOpenWeatherMap(coords) {
 }
 
 function fetchWeatherFromPos(pos) {
-    //TODO: Check pref and call the correct weather service
-    //fetchWeatherOpenWeatherMap(pos.coords);
-    fetchWeatherYahoo(pos.coords);
+    switch (prefs.provider) {
+        case 1:
+            fetchWeatherOpenWeatherMap(pos.coords);
+            break;
+        case 2:
+            fetchWeatherYahoo(pos.coords);
+            break; 
+        default: 
+            fetchWeatherYahoo(pos.coords);
+    }
 }
 
 function fetchWeather() {
-    //console.log("fetchWeather");
     if(Math.round(Date.now()/1000) - weather.lastUpdate >= maxWeatherUpdateFreq) {
         window.navigator.geolocation.getCurrentPosition(fetchWeatherFromPos,
                 locationError,
@@ -200,6 +208,9 @@ function sendWeather(weather) {
 }
 
 function sendPreferences(prefs) {
+	//Clear lastUpdate when updating preferences
+	//so any provider updates will take effect instantly.
+	weather.lastUpdate = 0;
 	Pebble.sendAppMessage(mergeObjects(prefs, {"setPrefs": 1}));
 }
 

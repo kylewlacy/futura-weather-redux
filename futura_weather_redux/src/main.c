@@ -151,6 +151,14 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 		if(!weather_needs_update(weather, new_prefs->weather_update_freq))
 			update_weather_info(weather);
 	}
+	if(old_prefs == NULL || old_prefs->provider != new_prefs->provider ) {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Provider changed will update weather");
+		weather_request_update();
+	}
+	if(old_prefs == NULL || old_prefs->language != new_prefs->language) { 
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Language changed will update time");
+		force_tick(ALL_UNITS);
+	}   
 	if(old_prefs == NULL || old_prefs->statusbar != new_prefs->statusbar) {
 		layer_set_hidden(statusbar_layer, !new_prefs->statusbar);
 	}
@@ -360,9 +368,8 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
     if(units_changed & DAY_UNIT) {
         /* The length 18 should be enougth to fit the most common language abbr */
         static char date_text[18];
-        /*TODO: Read lang from preferences, for lang numbers se futura_lang.h */
-        int lang = 0; //Hardcoded to en_US until pref is in place
         int wday = (now->tm_wday>0)?now->tm_wday-1:6;
+        int lang = (prefs->language >= 0 && prefs->language <= MAX_LANG)?prefs->language:0;
         snprintf(date_text, 18, "%s %s %d", day_names[lang][wday], month_names[lang][now->tm_mon], now->tm_mday);
         text_layer_set_text(date_layer, date_text);
     }
