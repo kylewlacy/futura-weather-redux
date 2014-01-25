@@ -1,9 +1,11 @@
-var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
+var configURL = "http://snaggen.github.io/futura-weather-redux/v3/preferences.html";
 
 var prefs = {
 	"tempFormat": 1,
 	"weatherUpdateFreq": 10 * 60,
-	"statusbar": 0
+	"statusbar": 0,
+	"provider": 2,
+	"language": 0
 };
 
 var weather = {
@@ -12,19 +14,124 @@ var weather = {
 	"lastUpdate": 0
 };
 var prevMessages = {};
-var coords;
 
 var maxWeatherUpdateFreq = 10 * 60;
 
-function fetchWeather() {
-	if(Math.round(Date.now()/1000) - weather.lastUpdate >= maxWeatherUpdateFreq) {
-		window.navigator.geolocation.getCurrentPosition(
-			function(pos) { coords = pos.coords; },
-			function(err) { console.warn("location error (" + err.code + "): " + err.message); },
-			{ "timeout": 15000, "maximumAge": 60000 }
-		);
-		
-		
+var yahooConditionToOpenWeatherMapCondition = {
+  0 : 900, //tornado
+  1 : 901, //tropical storm
+  2 : 902, //hurricane
+  3 : 212, //severe thunderstorms
+  4 : 211, //thunderstorms
+  5 : 511, //mixed rain and snow
+  6 : 611, //mixed rain and sleet
+  7 : 611, //mixed snow and sleet
+  8 : 511, //freezing drizzle
+  9 : 301, //drizzle
+  10 : 511, //freezing rain
+  11 : 521, //showers
+  12 : 521, //showers
+  13 : 601, //snow flurries
+  14 : 621, //light snow showers
+  15 : 602, //blowing snow
+  16 : 602, //snow
+  17 : 906, //hail
+  18 : 611, //sleet
+  19 : 731, //dust
+  20 : 741, //foggy
+  21 : 721, //haze
+  22 : 711, //smoky
+  23 : 905, //blustery
+  24 : 905, //windy
+  25 : 903, //cold
+  26 : 802, //cloudy
+  27 : 804, //mostly cloudy (night)
+  28 : 804, //mostly cloudy (day)
+  29 : 801, //partly cloudy (night)
+  30 : 801, //partly cloudy (day)
+  31 : 800, //clear (night)
+  32 : 800, //sunny
+  33 : 800, //fair (night)
+  34 : 800, //fair (day)
+  35 : 906, //mixed rain and hail
+  36 : 904, //hot
+  37 : 210, //isolated thunderstorms
+  38 : 211, //scattered thunderstorms
+  39 : 211, //scattered thunderstorms
+  40 : 521, //scattered showers
+  41 : 602, //heavy snow
+  42 : 621, //scattered snow showers
+  43 : 602, //heavy snow
+  44 : 801, //partly cloudy
+  45 : 201, //thundershowers
+  46 : 621, //snow showers
+  47 : 210, //isolated thundershowers
+  3200 : 0, //not available
+};
+
+function fetchWeatherYahoo(coords) {
+    var woeid = -1;
+    var query = encodeURI("select woeid from geo.placefinder where text=\""+coords.latitude+","+coords.longitude + "\" and gflags=\"R\"");
+    var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
+    
+    var response;
+    var req = new XMLHttpRequest();
+    req.open('GET', url, true);
+    req.onload = function(e) {
+        if (req.readyState == 4) {
+            if (req.status == 200) {
+                response = JSON.parse(req.responseText);
+                if (response) {
+                    woeid = response.query.results.Result.woeid;
+                    getWeatherYahooByWoeid(woeid,coords);
+                }
+            } else {
+                console.log("Error");
+            }
+        }
+    }
+    req.send(null);
+}
+
+function getWeatherYahooByWoeid(woeid,coords) {
+  //console.log("getWeatherYahooByWoeid " + woeid);
+  var celsius = 1;
+  var query = encodeURI("select item.condition from weather.forecast where woeid = " + woeid +
+                        " and u = \"c\"");
+  var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
+
+  var response;
+  var req = new XMLHttpRequest();
+  req.open('GET', url, true);
+  req.onload = function(e) {
+    if (req.readyState == 4) {
+      if (req.status == 200) {
+        response = JSON.parse(req.responseText);
+        if (response) {
+          var condition = response.query.results.channel.item.condition;
+          //Convert to kelvin
+          var temp = Number(condition.temp) + 273.15;
+          //console.log("temp " + condition.temp);
+          //console.log("adapted temp " + temp);
+          //console.log("condition " + condition.text);
+          var now = new Date();
+          var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
+          sendWeather(weather = {
+              "temperature": temp,
+              "conditions": yahooConditionToOpenWeatherMapCondition[condition.code],
+              "isDay": sunCalc.sunset > now && now > sunCalc.sunrise,
+              "lastUpdate": Math.round(now.getTime() / 1000)
+          });
+        }
+      } else {
+        console.log("Error");
+      }
+    }
+  }
+  req.send(null);
+}
+
+function fetchWeatherOpenWeatherMap(coords) {
 		var response;
 		var req = new XMLHttpRequest();
 		req.open('GET', "http://api.openweathermap.org/data/2.5/find?" +
@@ -53,14 +160,47 @@ function fetchWeather() {
 			}
 		}
 		req.send(null);
-	}
-	else {
-		console.warn("Weather update requested too soon; loading from cache (" + (new Date()).toString() + ")");
-		sendWeather(weather);
-	}
 }
 
+function fetchWeatherFromPos(pos) {
+    switch (prefs.provider) {
+        case 1:
+            fetchWeatherOpenWeatherMap(pos.coords);
+            break;
+        case 2:
+            fetchWeatherYahoo(pos.coords);
+            break; 
+        default: 
+            fetchWeatherYahoo(pos.coords);
+    }
+}
+
+function fetchWeather() {
+    if(Math.round(Date.now()/1000) - weather.lastUpdate >= maxWeatherUpdateFreq) {
+        window.navigator.geolocation.getCurrentPosition(fetchWeatherFromPos,
+                locationError,
+                { "timeout": 15000, "maximumAge": 60000 });
+    }
+    else {
+        console.warn("Weather update requested too soon; loading from cache (" + (new Date()).toString() + ")");
+        sendWeather(weather);
+    }
+}
+
+function locationError(err) {
+    console.warn('location error (' + err.code + '): ' + err.message);
+    sendWeather({
+        "temperature": 0,
+        "conditions": 0,
+        "isDay": 0,
+        "lastUpdate": Math.round(now.getTime() / 1000)
+    });
+}
+
+
 function sendWeather(weather) {
+    //console.log("sendWeather temperature: " + weather.temperature);
+    //console.log("sendWeather conditions: " + weather.conditions);
 	Pebble.sendAppMessage(mergeObjects({
 		"temperature": Math.round(weather.temperature * 100),
 		"conditions": weather.conditions + (weather.isDay ? 1000 : 0)
@@ -68,6 +208,9 @@ function sendWeather(weather) {
 }
 
 function sendPreferences(prefs) {
+	//Clear lastUpdate when updating preferences
+	//so any provider updates will take effect instantly.
+	weather.lastUpdate = 0;
 	Pebble.sendAppMessage(mergeObjects(prefs, {"setPrefs": 1}));
 }
 
@@ -85,7 +228,10 @@ function queryify(obj) {
 }
 
 
-Pebble.addEventListener("ready", function(e) { prevMessages = {}; });
+Pebble.addEventListener("ready", function(e) { 
+    prevMessages = {};  
+    fetchWeather();
+});
 
 Pebble.addEventListener("appmessage", function(e) {
 	if(e.payload["setPrefs"] == 1) {
@@ -93,7 +239,7 @@ Pebble.addEventListener("appmessage", function(e) {
 			if(e.payload[key] !== "undefined") { prefs[key] = e.payload[key]; }
 	}
 	else if(e.payload["requestWeather"] == 1) {
-		fetchWeather();
+        fetchWeather();
 	}
 	else {
 		console.warn("Received unknown app message:");

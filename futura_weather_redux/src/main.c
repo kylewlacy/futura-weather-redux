@@ -3,6 +3,7 @@
 #include "preferences.h"
 #include "weather.h"
 #include "main.h"
+#include "futura_lang.h"
 
 static Window *window;
 
@@ -40,54 +41,55 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
         case 300:
             return RESOURCE_ID_WEATHER_DRIZZLE;
         case 500:
+            switch(conditions % 1000) {
+                case 511:
+                    return RESOURCE_ID_WEATHER_RAIN_SNOW;
+            }
             return RESOURCE_ID_WEATHER_RAIN;
         case 600:
-            switch(conditions % 100) {
+            switch(conditions % 1000) {
                 case 611:
                     return RESOURCE_ID_WEATHER_SLEET;
                 case 612:
                     return RESOURCE_ID_WEATHER_RAIN_SLEET;
                 case 615:
                 case 616:
-                case 620:
-                case 621:
-                case 622:
                     return RESOURCE_ID_WEATHER_RAIN_SNOW;
             }
             return RESOURCE_ID_WEATHER_SNOW;
         case 700:
-            switch(conditions % 100) {
+            switch(conditions % 1000) {
                 case 731:
                 case 781:
                     return RESOURCE_ID_WEATHER_WIND;
             }
             return RESOURCE_ID_WEATHER_FOG;
         case 800:
-            switch(conditions % 100) {
-                case 0:
+            switch(conditions % 1000) {
+                case 800:
 					if(is_day)
 						return RESOURCE_ID_WEATHER_CLEAR_DAY;
 					return RESOURCE_ID_WEATHER_CLEAR_NIGHT;
-                case 1:
-                case 2:
+                case 801:
+                case 802:
 					if(is_day)
 						return RESOURCE_ID_WEATHER_PARTLY_CLOUDY_DAY;
 					return RESOURCE_ID_WEATHER_PARTLY_CLOUDY_NIGHT;
-                case 3:
-                case 4:
+                case 803:
+                case 804:
                     return RESOURCE_ID_WEATHER_CLOUDY;
             }
         case 900:
-            switch(conditions % 100) {
-                case 0:
-                case 1:
-                case 2:
+            switch(conditions % 1000) {
+                case 900:
+                case 901:
+                case 902:
                     return RESOURCE_ID_WEATHER_WIND;
-                case 3:
+                case 903:
                     return RESOURCE_ID_WEATHER_HOT;
-                case 4:
+                case 904:
                     return RESOURCE_ID_WEATHER_COLD;
-                case 5:
+                case 905:
                     return RESOURCE_ID_WEATHER_WIND;
                 case 950:
                 case 951:
@@ -150,6 +152,14 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 		if(!weather_needs_update(weather, new_prefs->weather_update_freq))
 			update_weather_info(weather);
 	}
+	if(old_prefs == NULL || old_prefs->provider != new_prefs->provider ) {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Provider changed will update weather");
+		weather_request_update();
+	}
+	if(old_prefs == NULL || old_prefs->language != new_prefs->language) { 
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Language changed will update time");
+		force_tick(ALL_UNITS);
+	}   
 	if(old_prefs == NULL || old_prefs->statusbar != new_prefs->statusbar) {
 		GRect statusbar_frame = GRect(0, 0, 144, 15);
 		GRect time_frame = GRect(0, 2, 144, 162);
@@ -390,8 +400,11 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
     }
     
     if(units_changed & DAY_UNIT) {
-        static char date_text[11];
-        strftime(date_text, 11, "%a %b %d",  now);
+        /* The length 18 should be enougth to fit the most common language abbr */
+        static char date_text[18];
+        int wday = (now->tm_wday>0)?now->tm_wday-1:6;
+        int lang = (prefs->language >= 0 && prefs->language <= MAX_LANG)?prefs->language:0;
+        snprintf(date_text, 18, "%s %s %d", day_names[lang][wday], month_names[lang][now->tm_mon], now->tm_mday);
         text_layer_set_text(date_layer, date_text);
     }
     
