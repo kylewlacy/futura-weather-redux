@@ -1,11 +1,10 @@
-var configURL = "http://snaggen.github.io/futura-weather-redux/v3/preferences.html";
+var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
 
 var prefs = {
 	"tempFormat": 1,
 	"weatherUpdateFreq": 10 * 60,
 	"statusbar": 0,
-	"provider": 2,
-	"language": 0
+	"provider": 2
 };
 
 var weather = {

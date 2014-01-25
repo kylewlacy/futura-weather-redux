@@ -1,9 +1,9 @@
 #include "pebble.h"
+
 #include "config.h"
 #include "preferences.h"
 #include "weather.h"
 #include "main.h"
-#include "futura_lang.h"
 
 static Window *window;
 
@@ -400,11 +400,9 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
     }
     
     if(units_changed & DAY_UNIT) {
-        /* The length 18 should be enougth to fit the most common language abbr */
+        // The length 18 should be enougth to fit the most common language formats
         static char date_text[18];
-        int wday = (now->tm_wday>0)?now->tm_wday-1:6;
-        int lang = (prefs->language >= 0 && prefs->language <= MAX_LANG)?prefs->language:0;
-        snprintf(date_text, 18, "%s %s %d", day_names[lang][wday], month_names[lang][now->tm_mon], now->tm_mday);
+        strftime(date_text, sizeof(date_text), "%a %b %d",  now);
         text_layer_set_text(date_layer, date_text);
     }
     
