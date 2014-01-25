@@ -152,12 +152,10 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 		if(!weather_needs_update(weather, new_prefs->weather_update_freq))
 			update_weather_info(weather);
 	}
-	if(old_prefs == NULL || old_prefs->provider != new_prefs->provider ) {
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Provider changed will update weather");
+	if(old_prefs == NULL || old_prefs->provider != new_prefs->provider) {
 		weather_request_update();
 	}
-	if(old_prefs == NULL || old_prefs->language != new_prefs->language) { 
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Language changed will update time");
+	if(old_prefs == NULL || old_prefs->language != new_prefs->language) {
 		force_tick(ALL_UNITS);
 	}   
 	if(old_prefs == NULL || old_prefs->statusbar != new_prefs->statusbar) {
@@ -206,6 +204,7 @@ void update_weather_info(Weather *weather) {
         snprintf(temperature_text, 8, "%d\u00B0", temperature);
         text_layer_set_text(weather_temperature_layer, temperature_text);
         
+		// TODO: Move this block to another method
         if(10 <= temperature && temperature <= 99) {
             layer_set_frame(text_layer_get_layer(weather_temperature_layer), GRect(70, 19+3, 72, 80));
             text_layer_set_font(weather_temperature_layer, futura_35);
@@ -293,8 +292,7 @@ void init() {
 	
 	preferences_send(prefs);
     
-    const bool animated = true;
-    window_stack_push(window, animated);
+    window_stack_push(window, true);
 }
 
 void window_load(Window *window) {

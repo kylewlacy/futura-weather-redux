@@ -17,55 +17,55 @@ var prevMessages = {};
 var maxWeatherUpdateFreq = 10 * 60;
 
 var yahooConditionToOpenWeatherMapCondition = {
-  0 : 900, //tornado
-  1 : 901, //tropical storm
-  2 : 902, //hurricane
-  3 : 212, //severe thunderstorms
-  4 : 211, //thunderstorms
-  5 : 511, //mixed rain and snow
-  6 : 611, //mixed rain and sleet
-  7 : 611, //mixed snow and sleet
-  8 : 511, //freezing drizzle
-  9 : 301, //drizzle
-  10 : 511, //freezing rain
-  11 : 521, //showers
-  12 : 521, //showers
-  13 : 601, //snow flurries
-  14 : 621, //light snow showers
-  15 : 602, //blowing snow
-  16 : 602, //snow
-  17 : 906, //hail
-  18 : 611, //sleet
-  19 : 731, //dust
-  20 : 741, //foggy
-  21 : 721, //haze
-  22 : 711, //smoky
-  23 : 905, //blustery
-  24 : 905, //windy
-  25 : 903, //cold
-  26 : 802, //cloudy
-  27 : 804, //mostly cloudy (night)
-  28 : 804, //mostly cloudy (day)
-  29 : 801, //partly cloudy (night)
-  30 : 801, //partly cloudy (day)
-  31 : 800, //clear (night)
-  32 : 800, //sunny
-  33 : 800, //fair (night)
-  34 : 800, //fair (day)
-  35 : 906, //mixed rain and hail
-  36 : 904, //hot
-  37 : 210, //isolated thunderstorms
-  38 : 211, //scattered thunderstorms
-  39 : 211, //scattered thunderstorms
-  40 : 521, //scattered showers
-  41 : 602, //heavy snow
-  42 : 621, //scattered snow showers
-  43 : 602, //heavy snow
-  44 : 801, //partly cloudy
-  45 : 201, //thundershowers
-  46 : 621, //snow showers
-  47 : 210, //isolated thundershowers
-  3200 : 0, //not available
+  0  : 900, // Tornado
+  1  : 901, // Tropical storm
+  2  : 902, // Hurricane
+  3  : 212, // Severe thunderstorms
+  4  : 211, // Thunderstorms
+  5  : 511, // Mixed rain and snow
+  6  : 611, // Mixed rain and sleet
+  7  : 611, // Mixed snow and sleet
+  8  : 511, // Freezing drizzle
+  9  : 301, // Drizzle
+  10 : 511, // Freezing rain
+  11 : 521, // Showers
+  12 : 521, // Showers
+  13 : 601, // Snow flurries
+  14 : 621, // Light snow showers
+  15 : 602, // Blowing snow
+  16 : 602, // Snow
+  17 : 906, // Hail
+  18 : 611, // Sleet
+  19 : 731, // Dust
+  20 : 741, // Foggy
+  21 : 721, // Haze
+  22 : 711, // Smoky
+  23 : 905, // Blustery
+  24 : 905, // Windy
+  25 : 903, // Cold
+  26 : 802, // Cloudy
+  27 : 804, // Mostly cloudy (night)
+  28 : 804, // Mostly cloudy (day)
+  29 : 801, // Partly cloudy (night)
+  30 : 801, // Partly cloudy (day)
+  31 : 800, // Clear (night)
+  32 : 800, // Sunny
+  33 : 800, // Fair (night)
+  34 : 800, // Fair (day)
+  35 : 906, // Mixed rain and hail
+  36 : 904, // Hot
+  37 : 210, // Isolated thunderstorms
+  38 : 211, // Scattered thunderstorms
+  39 : 211, // Scattered thunderstorms
+  40 : 521, // Scattered showers
+  41 : 602, // Heavy snow
+  42 : 621, // Scattered snow showers
+  43 : 602, // Heavy snow
+  44 : 801, // Partly cloudy
+  45 : 201, // Thundershowers
+  46 : 621, // Snow showers
+  47 : 210, // Isolated thundershowers
+  3200 : 0, // Not available
 };
 
 function fetchWeatherYahoo(coords) {
@@ -75,7 +75,7 @@ function fetchWeatherYahoo(coords) {
     
     var response;
     var req = new XMLHttpRequest();
-    req.open('GET', url, true);
+    req.open("GET", url, true);
     req.onload = function(e) {
         if (req.readyState == 4) {
             if (req.status == 200) {
