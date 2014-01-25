@@ -7,7 +7,9 @@ Preferences* preferences_load() {
 	static Preferences prefs = {
 		.temp_format = TEMP_FORMAT_CELCIUS,
 		.weather_update_freq = 10*60,
-		.statusbar = false
+		.statusbar = false,
+		.provider = 2,
+        .language = 0
 	};
 	
 	if(persist_exists(PREF_TEMP_FORMAT_PERSIST_KEY))
@@ -16,6 +18,10 @@ Preferences* preferences_load() {
 		prefs.weather_update_freq = persist_read_int(PREF_WEATHER_UPDATE_FREQ_PERSIST_KEY);
 	if(persist_exists(PREF_STATUSBAR_PERSIST_KEY))
 		prefs.statusbar = persist_read_bool(PREF_STATUSBAR_PERSIST_KEY);
+	if(persist_exists(PREF_PROVIDER_PERSIST_KEY))
+		prefs.provider = persist_read_int(PREF_PROVIDER_PERSIST_KEY);
+	if(persist_exists(PREF_LANGUAGE_PERSIST_KEY))
+		prefs.language = persist_read_int(PREF_LANGUAGE_PERSIST_KEY);
 	
 	return &prefs;
 }
@@ -24,8 +30,11 @@ bool preferences_save(Preferences *prefs) {
 	status_t temp_format = persist_write_int(PREF_TEMP_FORMAT_PERSIST_KEY, prefs->temp_format);
 	status_t weather_update_freq = persist_write_int(PREF_WEATHER_UPDATE_FREQ_PERSIST_KEY, (int)prefs->weather_update_freq);
 	status_t statusbar = persist_write_bool(PREF_STATUSBAR_PERSIST_KEY, prefs->statusbar);
+	status_t provider = persist_write_bool(PREF_PROVIDER_PERSIST_KEY, prefs->provider);
+	status_t language = persist_write_bool(PREF_LANGUAGE_PERSIST_KEY, prefs->language);
 	
-	if(temp_format < 0 || weather_update_freq < 0 || statusbar < 0) {
+	if(temp_format < 0 || weather_update_freq < 0 || statusbar < 0 ||
+            provider < 0 || language < 0 ) {
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to save preferences");
 		return false;
 	}
@@ -55,6 +64,8 @@ void preferences_set(Preferences *prefs, DictionaryIterator *iter) {
 	Tuple *temp_format = dict_find(iter, TEMP_FORMAT_MSG_KEY);
 	Tuple *weather_update_frequency = dict_find(iter, WEATHER_UPDATE_FREQ_MSG_KEY);
 	Tuple *statusbar = dict_find(iter, STATUSBAR_MSG_KEY);
+	Tuple *provider = dict_find(iter, PROVIDER_MSG_KEY);
+	Tuple *language = dict_find(iter, LANG_MSG_KEY);
 	
 	if(temp_format)
 		prefs->temp_format = temp_format->value->int32;
@@ -64,4 +75,8 @@ void preferences_set(Preferences *prefs, DictionaryIterator *iter) {
 		prefs->statusbar = statusbar->value->int32 != 0;
 		APP_LOG(APP_LOG_LEVEL_INFO, "Statusbar is %s", prefs->statusbar ? "on" : "off");
 	}
+	if(provider)
+		prefs->provider = provider->value->int32;
+	if(language)
+		prefs->language = language->value->int32;
 }
