@@ -488,7 +488,10 @@ void window_unload(Window *window) {
 	
 	if(statusbar_battery_bitmap)
 		gbitmap_destroy(statusbar_battery_bitmap);
+	if(statusbar_connection_bitmap)
+		gbitmap_destroy(statusbar_connection_bitmap);
 	bitmap_layer_destroy(statusbar_battery_layer);
+	bitmap_layer_destroy(statusbar_connection_layer);
 	layer_destroy(statusbar_layer);
     
     fonts_unload_custom_font(futura_18);
