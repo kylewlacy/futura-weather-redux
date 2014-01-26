@@ -16,9 +16,11 @@ GRect get_statusbar_frame(Preferences *prefs);
 GRect get_time_frame(Preferences *prefs, bool weather_visible);
 GRect get_date_frame(Preferences *prefs, bool weather_visible);
 GRect get_weather_frame(bool weather_visible);
+
 void change_preferences(Preferences *old_prefs, Preferences *new_prefs);
 void set_weather_visible(bool visible, bool animate);
 void set_weather_visible_animation_stopped_handler(Animation *animation, bool finished, void *context);
+
 
 void update_weather_info(Weather *weather);
 
@@ -26,6 +28,8 @@ void out_sent_handler(DictionaryIterator *sent, void *context);
 void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context);
 void in_received_handler(DictionaryIterator *received, void *context);
 void in_dropped_handler(AppMessageResult reason, void *context);
+
+void animation_stopped_handler(Animation *animation, bool finished, void *context);
 
 int main();
 void init();

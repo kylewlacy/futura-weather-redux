@@ -230,6 +230,13 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 			animation_set_duration(&time_animation->animation, 250);
 			animation_set_duration(&date_animation->animation, 250);
 			
+			animation_set_curve(&statusbar_animation->animation, new_prefs->statusbar ? AnimationCurveEaseIn : AnimationCurveEaseOut);
+			
+			AnimationHandlers animation_handlers = { .stopped = animation_stopped_handler };
+			animation_set_handlers(&statusbar_animation->animation, animation_handlers, NULL);
+			animation_set_handlers(&time_animation->animation, animation_handlers, NULL);
+			animation_set_handlers(&date_animation->animation, animation_handlers, NULL);
+			
 			animation_schedule(&statusbar_animation->animation);
 			animation_schedule(&time_animation->animation);
 			animation_schedule(&date_animation->animation);
@@ -260,6 +267,10 @@ void set_weather_visible(bool visible, bool animate) {
 		
 		animation_set_curve(&weather_animation->animation, visible ? AnimationCurveEaseOut : AnimationCurveEaseIn);
 		
+		AnimationHandlers animation_handlers = { .stopped = animation_stopped_handler };
+		animation_set_handlers(&time_animation->animation, animation_handlers, NULL);
+		animation_set_handlers(&date_animation->animation, animation_handlers, NULL);
+		
 		AnimationHandlers weather_animation_handlers = { .stopped = set_weather_visible_animation_stopped_handler };
 		animation_set_handlers(&weather_animation->animation, weather_animation_handlers, visible ? (void*)1 : (void*)0);
 		
@@ -278,6 +289,7 @@ void set_weather_visible(bool visible, bool animate) {
 void set_weather_visible_animation_stopped_handler(Animation *animation, bool finished, void *context) {
 	if(finished)
 		layer_set_hidden(weather_layer, context == 0);
+	animation_stopped_handler(animation, finished, context);
 }
 
 
@@ -315,6 +327,12 @@ void update_weather_info(Weather *weather) {
 		
 		set_weather_visible(true, true);
     }
+}
+
+
+
+void animation_stopped_handler(Animation *animation, bool finished, void *context) {
+	animation_destroy(animation);
 }
 
 
