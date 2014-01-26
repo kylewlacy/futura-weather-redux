@@ -202,7 +202,7 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 	// old_prefs will be NULL for initialization (app first loaded)
 	if(old_prefs == NULL || old_prefs->temp_format != new_prefs->temp_format) {
 		if(!weather_needs_update(weather, new_prefs->weather_update_freq))
-			update_weather_info(weather);
+			update_weather_info(weather, old_prefs != NULL);
 	}
 	if(old_prefs == NULL || old_prefs->weather_provider != new_prefs->weather_provider) {
 		weather_request_update();
@@ -299,7 +299,7 @@ void set_weather_visible_animation_stopped_handler(Animation *animation, bool fi
 
 
 
-void update_weather_info(Weather *weather) {
+void update_weather_info(Weather *weather, bool animate) {
     if(weather->conditions % 1000) {
         static char temperature_text[8];
 		int temperature = weather_convert_temperature(weather->temperature, prefs->temp_format);
@@ -330,7 +330,7 @@ void update_weather_info(Weather *weather) {
         weather_icon_bitmap = gbitmap_create_with_resource(get_resource_for_weather_conditions(weather->conditions));
         bitmap_layer_set_bitmap(weather_icon_layer, weather_icon_bitmap);
 		
-		set_weather_visible(true, true);
+		set_weather_visible(true, animate);
     }
 }
 
@@ -355,7 +355,7 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 	
 	if(set_weather) {
 		weather_set(weather, received);
-		update_weather_info(weather);
+		update_weather_info(weather, true);
 	}
 	
 	if(set_preferences) {

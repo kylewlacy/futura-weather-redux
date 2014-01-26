@@ -5,7 +5,7 @@
 Weather* weather_load_cache() {
 	static Weather weather = {
 		.last_update_time = 0,
-		.temperature = -46100,				// Below absolute zero in Kelvin, Celsius, Fahrenheit, Rankine, Delisle, Newton, Rèaumur, and Rømer
+		.temperature = -46100,  // Below absolute zero in Kelvin, Celsius, Fahrenheit, Rankine, Delisle, Newton, Rèaumur, and Rømer
 		.conditions = 0
 	};
 	
