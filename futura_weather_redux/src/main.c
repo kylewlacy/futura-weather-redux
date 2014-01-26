@@ -420,10 +420,10 @@ void window_load(Window *window) {
 	
 	statusbar_layer = layer_create(default_statusbar_frame = GRect(0, 0, 144, 15));
 	
-	statusbar_battery_layer = bitmap_layer_create(GRect(117, 3, 25, 11));
+	statusbar_battery_layer = bitmap_layer_create(GRect(116, 3, 25, 11));
 	layer_add_child(statusbar_layer, bitmap_layer_get_layer(statusbar_battery_layer));
 	
-	statusbar_connection_layer = bitmap_layer_create(GRect(3, 3, 19, 13));
+	statusbar_connection_layer = bitmap_layer_create(GRect(3, 3, 19, 11));
 	layer_add_child(statusbar_layer, bitmap_layer_get_layer(statusbar_connection_layer));
 	
 	layer_add_child(window_layer, statusbar_layer);
