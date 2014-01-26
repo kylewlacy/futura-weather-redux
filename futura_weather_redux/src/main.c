@@ -153,6 +153,46 @@ uint32_t get_resource_for_battery_state(BatteryChargeState battery) {
 
 
 
+GRect get_statusbar_frame(Preferences *prefs) {
+	GRect frame = default_statusbar_frame;
+	
+	if(!prefs->statusbar)
+		frame.origin.y -= frame.size.h;
+	return frame;
+}
+
+GRect get_time_frame(Preferences *prefs, bool weather_visible) {
+	GRect frame = default_time_frame;
+	
+	if(weather_visible && prefs->statusbar)
+		frame.origin.y += 8;
+	else if(!weather_visible)
+		frame.origin.y = 30;
+	
+	return frame;
+}
+
+GRect get_date_frame(Preferences *prefs, bool weather_visible) {
+	GRect frame = default_date_frame;
+	
+	if(weather_visible && prefs->statusbar)
+		frame.origin.y += 4;
+	else if(!weather_visible)
+		frame.origin.y = 103;
+	
+	return frame;
+}
+
+GRect get_weather_frame(bool weather_visible) {
+	GRect frame = default_weather_frame;
+	
+	if(!weather_visible)
+		frame.origin.y = 168; // Pebble screen height
+	return frame;
+}
+
+
+
 void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 	// old_prefs will be NULL for initialization (app first loaded)
 	if(old_prefs == NULL || old_prefs->temp_format != new_prefs->temp_format) {
@@ -166,23 +206,16 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 	//	force_tick(ALL_UNITS);
 	// }
 	if(old_prefs == NULL || old_prefs->statusbar != new_prefs->statusbar) {
-		// TODO: Move this to a method
-		GRect statusbar_frame = default_statusbar_frame;
-		GRect time_frame = default_time_frame;
-		GRect date_frame = default_date_frame;
-		
-		if(new_prefs->statusbar) {
-			time_frame.origin.y += 8;
-			date_frame.origin.y += 4;
-		}
-		else {
-			statusbar_frame.origin.y -= statusbar_frame.size.h;
-		}
+		GRect statusbar_frame = get_statusbar_frame(new_prefs);
+		GRect time_frame = get_time_frame(new_prefs, true);
+		GRect date_frame = get_date_frame(new_prefs, true);
 		
 		if(old_prefs == NULL) {
 			layer_set_frame(statusbar_layer, statusbar_frame);
 			layer_set_frame(text_layer_get_layer(time_layer), time_frame);
 			layer_set_frame(text_layer_get_layer(date_layer), date_frame);
+			
+			set_weather_visible(!weather_needs_update(weather, new_prefs->weather_update_freq), false);
 		}
 		else {
 			PropertyAnimation *statusbar_animation = property_animation_create_layer_frame(statusbar_layer, NULL, &statusbar_frame);
@@ -201,27 +234,18 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 			animation_schedule(&time_animation->animation);
 			animation_schedule(&date_animation->animation);
 		}
-		
-		if(old_prefs == NULL) {
-			set_weather_visible(!weather_needs_update(weather, new_prefs->weather_update_freq), false);
-		}
 	}
 }
 
 void set_weather_visible(bool visible, bool animate) {
-	// TODO: Get the 'intended' value of each (consider the statusbar, for example)
-	GRect time_frame = default_time_frame;
-	GRect date_frame = default_date_frame;
-	GRect weather_frame = default_weather_frame;
-	
-	if(!visible) {
-		time_frame.origin.y = 30;
-		date_frame.origin.y = 103;
-		weather_frame.origin.y = 168;
-	}
+	GRect time_frame = get_time_frame(prefs, visible);
+	GRect date_frame = get_date_frame(prefs, visible);
+	GRect weather_frame = get_weather_frame(visible);
 	
 	if(animate) {
-		layer_set_hidden(weather_layer, !visible);
+		if(visible)
+			layer_set_hidden(weather_layer, false);
+		
 		PropertyAnimation *time_animation = property_animation_create_layer_frame(text_layer_get_layer(time_layer), NULL, &time_frame);
 		PropertyAnimation *date_animation = property_animation_create_layer_frame(text_layer_get_layer(date_layer), NULL, &date_frame);
 		PropertyAnimation *weather_animation = property_animation_create_layer_frame(weather_layer, NULL, &weather_frame);
@@ -464,8 +488,7 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
     }
     
     if(units_changed & DAY_UNIT) {
-        // The length 18 should be enougth to fit the most common language formats
-        static char date_text[18];
+        static char date_text[18]; // 18 characters should be enougth to fit the most common language formats
         strftime(date_text, sizeof(date_text), "%a %b %d",  now);
         text_layer_set_text(date_layer, date_text);
     }
