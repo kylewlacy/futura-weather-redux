@@ -122,31 +122,29 @@ uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
 }
 
 uint32_t get_resource_for_battery_state(BatteryChargeState battery) {
-	if((battery.is_charging || battery.is_plugged) && battery.charge_percent > 99)
-		return RESOURCE_ID_CHARGED;
+	if(battery.is_plugged && !battery.is_charging)
+		return RESOURCE_ID_PLUGGED_IN;
 	
-	if(battery.charge_percent >= 99)
+	if(battery.charge_percent >= 100)
 		return battery.is_charging ? RESOURCE_ID_CHARGING_100 : RESOURCE_ID_BATTERY_100;
-	if(battery.charge_percent >= 91)
-		return battery.is_charging ? RESOURCE_ID_CHARGING_91 : RESOURCE_ID_BATTERY_91;
-	if(battery.charge_percent >= 82)
-		return battery.is_charging ? RESOURCE_ID_CHARGING_82 : RESOURCE_ID_BATTERY_82;
-	if(battery.charge_percent >= 73)
-		return battery.is_charging ? RESOURCE_ID_CHARGING_73 : RESOURCE_ID_BATTERY_73;
-	if(battery.charge_percent >= 64)
-		return battery.is_charging ? RESOURCE_ID_CHARGING_64 : RESOURCE_ID_BATTERY_64;
-	if(battery.charge_percent >= 55)
-		return battery.is_charging ? RESOURCE_ID_CHARGING_55 : RESOURCE_ID_BATTERY_55;
-	if(battery.charge_percent >= 46)
-		return battery.is_charging ? RESOURCE_ID_CHARGING_46 : RESOURCE_ID_BATTERY_46;
-	if(battery.charge_percent >= 37)
-		return battery.is_charging ? RESOURCE_ID_CHARGING_37 : RESOURCE_ID_BATTERY_37;
-	if(battery.charge_percent >= 28)
-		return battery.is_charging ? RESOURCE_ID_CHARGING_28 : RESOURCE_ID_BATTERY_28;
-	if(battery.charge_percent >= 19)
-		return battery.is_charging ? RESOURCE_ID_CHARGING_19 : RESOURCE_ID_BATTERY_19;
-	if(battery.charge_percent >= 9)
-		return battery.is_charging ? RESOURCE_ID_CHARGING_9 : RESOURCE_ID_BATTERY_9;
+	if(battery.charge_percent >= 90)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_90  : RESOURCE_ID_BATTERY_90;
+	if(battery.charge_percent >= 80)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_80  : RESOURCE_ID_BATTERY_80;
+	if(battery.charge_percent >= 70)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_70  : RESOURCE_ID_BATTERY_70;
+	if(battery.charge_percent >= 60)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_60  : RESOURCE_ID_BATTERY_60;
+	if(battery.charge_percent >= 50)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_50  : RESOURCE_ID_BATTERY_50;
+	if(battery.charge_percent >= 40)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_40  : RESOURCE_ID_BATTERY_40;
+	if(battery.charge_percent >= 30)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_30  : RESOURCE_ID_BATTERY_30;
+	if(battery.charge_percent >= 20)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_20  : RESOURCE_ID_BATTERY_20;
+	if(battery.charge_percent >= 10)
+		return battery.is_charging ? RESOURCE_ID_CHARGING_10  : RESOURCE_ID_BATTERY_10;
 	
 	return battery.is_charging ? RESOURCE_ID_CHARGING_0 : RESOURCE_ID_BATTERY_0;
 }
@@ -415,7 +413,7 @@ void window_load(Window *window) {
 	
 	statusbar_layer = layer_create(default_statusbar_frame = GRect(0, 0, 144, 15));
 	
-	statusbar_battery_layer = bitmap_layer_create(GRect(125, 3, 16, 10));
+	statusbar_battery_layer = bitmap_layer_create(GRect(117, 3, 25, 11));
 	layer_add_child(statusbar_layer, bitmap_layer_get_layer(statusbar_battery_layer));
 	
 	layer_add_child(window_layer, statusbar_layer);
@@ -528,8 +526,8 @@ void handle_battery(BatteryChargeState battery) {
 		statusbar_battery_bitmap = gbitmap_create_with_resource(statusbar_battery_resource);
 		bitmap_layer_set_bitmap(statusbar_battery_layer, statusbar_battery_bitmap);
 		
-		// TODO: Why is this needed to redraw the bitmap?
-		force_tick(ALL_UNITS);
+		layer_mark_dirty(bitmap_layer_get_layer(statusbar_battery_layer));
+		layer_mark_dirty(statusbar_layer);
 	}
 }
 

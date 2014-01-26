@@ -175,54 +175,49 @@
 				"file": "images/statusbar/battery-100.png"
 			},
 			{
-				"name": "BATTERY_91",
+				"name": "BATTERY_90",
 				"type": "png",
-				"file": "images/statusbar/battery-91.png"
+				"file": "images/statusbar/battery-90.png"
 			},
 			{
-				"name": "BATTERY_82",
+				"name": "BATTERY_80",
 				"type": "png",
-				"file": "images/statusbar/battery-82.png"
+				"file": "images/statusbar/battery-80.png"
 			},
 			{
-				"name": "BATTERY_73",
+				"name": "BATTERY_70",
 				"type": "png",
-				"file": "images/statusbar/battery-73.png"
+				"file": "images/statusbar/battery-70.png"
 			},
 			{
-				"name": "BATTERY_64",
+				"name": "BATTERY_60",
 				"type": "png",
-				"file": "images/statusbar/battery-64.png"
+				"file": "images/statusbar/battery-60.png"
 			},
 			{
-				"name": "BATTERY_55",
+				"name": "BATTERY_50",
 				"type": "png",
-				"file": "images/statusbar/battery-55.png"
+				"file": "images/statusbar/battery-50.png"
 			},
 			{
-				"name": "BATTERY_46",
+				"name": "BATTERY_40",
 				"type": "png",
-				"file": "images/statusbar/battery-46.png"
+				"file": "images/statusbar/battery-40.png"
 			},
 			{
-				"name": "BATTERY_37",
+				"name": "BATTERY_30",
 				"type": "png",
-				"file": "images/statusbar/battery-37.png"
+				"file": "images/statusbar/battery-30.png"
 			},
 			{
-				"name": "BATTERY_28",
+				"name": "BATTERY_20",
 				"type": "png",
-				"file": "images/statusbar/battery-28.png"
+				"file": "images/statusbar/battery-20.png"
 			},
 			{
-				"name": "BATTERY_19",
+				"name": "BATTERY_10",
 				"type": "png",
-				"file": "images/statusbar/battery-19.png"
-			},
-			{
-				"name": "BATTERY_9",
-				"type": "png",
-				"file": "images/statusbar/battery-9.png"
+				"file": "images/statusbar/battery-10.png"
 			},
 			{
 				"name": "BATTERY_0",
@@ -235,54 +230,49 @@
 				"file": "images/statusbar/charging-100.png"
 			},
 			{
-				"name": "CHARGING_91",
+				"name": "CHARGING_90",
 				"type": "png",
-				"file": "images/statusbar/charging-91.png"
+				"file": "images/statusbar/charging-90.png"
 			},
 			{
-				"name": "CHARGING_82",
+				"name": "CHARGING_80",
 				"type": "png",
-				"file": "images/statusbar/charging-82.png"
+				"file": "images/statusbar/charging-80.png"
 			},
 			{
-				"name": "CHARGING_73",
+				"name": "CHARGING_70",
 				"type": "png",
-				"file": "images/statusbar/charging-73.png"
+				"file": "images/statusbar/charging-70.png"
 			},
 			{
-				"name": "CHARGING_64",
+				"name": "CHARGING_60",
 				"type": "png",
-				"file": "images/statusbar/charging-64.png"
+				"file": "images/statusbar/charging-60.png"
 			},
 			{
-				"name": "CHARGING_55",
+				"name": "CHARGING_50",
 				"type": "png",
-				"file": "images/statusbar/charging-55.png"
+				"file": "images/statusbar/charging-50.png"
 			},
 			{
-				"name": "CHARGING_46",
+				"name": "CHARGING_40",
 				"type": "png",
-				"file": "images/statusbar/charging-46.png"
+				"file": "images/statusbar/charging-40.png"
 			},
 			{
-				"name": "CHARGING_37",
+				"name": "CHARGING_30",
 				"type": "png",
-				"file": "images/statusbar/charging-37.png"
+				"file": "images/statusbar/charging-30.png"
 			},
 			{
-				"name": "CHARGING_28",
+				"name": "CHARGING_20",
 				"type": "png",
-				"file": "images/statusbar/charging-28.png"
+				"file": "images/statusbar/charging-20.png"
 			},
 			{
-				"name": "CHARGING_19",
+				"name": "CHARGING_10",
 				"type": "png",
-				"file": "images/statusbar/charging-19.png"
-			},
-			{
-				"name": "CHARGING_9",
-				"type": "png",
-				"file": "images/statusbar/charging-9.png"
+				"file": "images/statusbar/charging-10.png"
 			},
 			{
 				"name": "CHARGING_0",
@@ -290,9 +280,9 @@
 				"file": "images/statusbar/charging-0.png"
 			},
 			{
-				"name": "CHARGED",
+				"name": "PLUGGED_IN",
 				"type": "png",
-				"file": "images/statusbar/charged.png"
+				"file": "images/statusbar/plugged-in.png"
 			}
 		]
 	}
