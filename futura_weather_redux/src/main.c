@@ -16,8 +16,11 @@ GFont futura_53;
 
 static Layer *statusbar_layer;
 static BitmapLayer *statusbar_battery_layer;
+static BitmapLayer *statusbar_connection_layer;
 static uint32_t statusbar_battery_resource;
+static uint32_t statusbar_connection_resource;
 static GBitmap *statusbar_battery_bitmap = NULL;
+static GBitmap *statusbar_connection_bitmap = NULL;
 static GRect default_statusbar_frame;
 
 static TextLayer *time_layer;
@@ -147,6 +150,10 @@ uint32_t get_resource_for_battery_state(BatteryChargeState battery) {
 		return battery.is_charging ? RESOURCE_ID_CHARGING_10  : RESOURCE_ID_BATTERY_10;
 	
 	return battery.is_charging ? RESOURCE_ID_CHARGING_0 : RESOURCE_ID_BATTERY_0;
+}
+
+uint32_t get_resource_for_bluetooth_connection(bool connected) {
+	return connected ? RESOURCE_ID_BLUETOOTH : RESOURCE_ID_DISCONNECTED;
 }
 
 
@@ -416,6 +423,9 @@ void window_load(Window *window) {
 	statusbar_battery_layer = bitmap_layer_create(GRect(117, 3, 25, 11));
 	layer_add_child(statusbar_layer, bitmap_layer_get_layer(statusbar_battery_layer));
 	
+	statusbar_connection_layer = bitmap_layer_create(GRect(3, 3, 19, 13));
+	layer_add_child(statusbar_layer, bitmap_layer_get_layer(statusbar_connection_layer));
+	
 	layer_add_child(window_layer, statusbar_layer);
 	
 	
@@ -458,12 +468,12 @@ void window_load(Window *window) {
 	
 	tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
 	battery_state_service_subscribe(handle_battery);
+	bluetooth_connection_service_subscribe(handle_bluetooth);
     
-	// "Force" a tick with all units (draws everything, since we're only drawing what we need)
+	// "Force" an update for each subscribed service (draws everything, since we're only drawing what we need)
     force_tick(ALL_UNITS);
-	
-	// "Force" a battery update with the current battery status
 	handle_battery(battery_state_service_peek());
+	handle_bluetooth(bluetooth_connection_service_peek());
 }
 
 void window_unload(Window *window) {
@@ -530,6 +540,24 @@ void handle_battery(BatteryChargeState battery) {
 		layer_mark_dirty(statusbar_layer);
 	}
 }
+
+void handle_bluetooth(bool connected) {
+	uint32_t new_connection_resource = get_resource_for_bluetooth_connection(connected);
+	
+	if(!statusbar_connection_bitmap || new_connection_resource != statusbar_connection_resource) {
+		statusbar_connection_resource = new_connection_resource;
+		
+		if(statusbar_connection_bitmap)
+			gbitmap_destroy(statusbar_connection_bitmap);
+		statusbar_connection_bitmap = gbitmap_create_with_resource(statusbar_connection_resource);
+		bitmap_layer_set_bitmap(statusbar_connection_layer, statusbar_connection_bitmap);
+		
+		layer_mark_dirty(bitmap_layer_get_layer(statusbar_connection_layer));
+		layer_mark_dirty(statusbar_layer);
+	}
+}
+
+
 
 
 

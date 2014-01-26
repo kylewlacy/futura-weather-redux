@@ -283,6 +283,16 @@
 				"name": "PLUGGED_IN",
 				"type": "png",
 				"file": "images/statusbar/plugged-in.png"
+			},
+			{
+				"name": "BLUETOOTH",
+				"type": "png",
+				"file": "images/statusbar/bluetooth.png"
+			},
+			{
+				"name": "DISCONNECTED",
+				"type": "png",
+				"file": "images/statusbar/disconnected.png"
 			}
 		]
 	}

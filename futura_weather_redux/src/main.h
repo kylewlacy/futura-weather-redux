@@ -11,6 +11,7 @@ void send_preferences();
 
 uint32_t get_resource_for_weather_conditions(uint32_t conditions);
 uint32_t get_resource_for_battery_state(BatteryChargeState battery);
+uint32_t get_resource_for_bluetooth_connection(bool connected);
 
 GRect get_statusbar_frame(Preferences *prefs);
 GRect get_time_frame(Preferences *prefs, bool weather_visible);
@@ -39,6 +40,7 @@ void deinit();
 
 void handle_tick(struct tm *now, TimeUnits units_changed);
 void handle_battery(BatteryChargeState battery);
+void handle_bluetooth(bool connected);
 
 void force_tick(TimeUnits units_changed);
 
