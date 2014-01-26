@@ -18,8 +18,8 @@
 		"tempFormat": 6,
 		"weatherUpdateFreq": 7,
 		"statusbar": 8,
-		"provider": 9,
-		"language": 10
+		"weatherOutdatedTime": 9,
+		"weatherProvider": 10
 	},
 	"resources": {
 		"media": [

@@ -7,8 +7,8 @@ typedef struct {
 	TempFormat temp_format;
 	time_t weather_update_freq;
 	bool statusbar;
-	int provider;
-	int language;
+	int weather_provider;
+	time_t weather_outdated_time;
 } Preferences;
 
 Preferences* preferences_load();

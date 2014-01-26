@@ -4,7 +4,8 @@ var prefs = {
 	"tempFormat": 1,
 	"weatherUpdateFreq": 10 * 60,
 	"statusbar": 0,
-	"provider": 2
+	"weatherProvider": 1,
+	"weatherOutdatedTime": 60 * 60
 };
 
 var weather = {
@@ -93,7 +94,6 @@ function fetchWeatherYahoo(coords) {
 }
 
 function getWeatherYahooByWoeid(woeid,coords) {
-  //console.log("getWeatherYahooByWoeid " + woeid);
   var celsius = 1;
   var query = encodeURI("select item.condition from weather.forecast where woeid = " + woeid +
                         " and u = \"c\"");
@@ -101,20 +101,19 @@ function getWeatherYahooByWoeid(woeid,coords) {
 
   var response;
   var req = new XMLHttpRequest();
-  req.open('GET', url, true);
+  req.open("GET", url, true);
   req.onload = function(e) {
     if (req.readyState == 4) {
       if (req.status == 200) {
         response = JSON.parse(req.responseText);
         if (response) {
           var condition = response.query.results.channel.item.condition;
-          //Convert to kelvin
+          
+          //Convert to Kelvin
           var temp = Number(condition.temp) + 273.15;
-          //console.log("temp " + condition.temp);
-          //console.log("adapted temp " + temp);
-          //console.log("condition " + condition.text);
           var now = new Date();
           var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
+          
           sendWeather(weather = {
               "temperature": temp,
               "conditions": yahooConditionToOpenWeatherMapCondition[condition.code],
@@ -133,8 +132,7 @@ function getWeatherYahooByWoeid(woeid,coords) {
 function fetchWeatherOpenWeatherMap(coords) {
 		var response;
 		var req = new XMLHttpRequest();
-		req.open('GET', "http://api.openweathermap.org/data/2.5/find?" +
-				 "lat=" + coords.latitude + "&lon=" + coords.longitude + "&cnt=1", true);
+		req.open("GET", "http://api.openweathermap.org/data/2.5/find?lat=" + coords.latitude + "&lon=" + coords.longitude + "&cnt=1", true);
 		req.onload = function(e) {
 			if (req.readyState == 4) {
 				if(req.status == 200) {
@@ -162,15 +160,14 @@ function fetchWeatherOpenWeatherMap(coords) {
 }
 
 function fetchWeatherFromPos(pos) {
-    switch (prefs.provider) {
-        case 1:
+    switch (prefs.weatherProvider) {
+        case 1: // OpenWeatherMap
+        default:
             fetchWeatherOpenWeatherMap(pos.coords);
             break;
-        case 2:
+        case 2: // Yahoo! Weather
             fetchWeatherYahoo(pos.coords);
-            break; 
-        default: 
-            fetchWeatherYahoo(pos.coords);
+            break;
     }
 }
 
@@ -187,7 +184,7 @@ function fetchWeather() {
 }
 
 function locationError(err) {
-    console.warn('location error (' + err.code + '): ' + err.message);
+    console.warn("location error (" + err.code + "): " + err.message);
     sendWeather({
         "temperature": 0,
         "conditions": 0,
@@ -198,8 +195,6 @@ function locationError(err) {
 
 
 function sendWeather(weather) {
-    //console.log("sendWeather temperature: " + weather.temperature);
-    //console.log("sendWeather conditions: " + weather.conditions);
 	Pebble.sendAppMessage(mergeObjects({
 		"temperature": Math.round(weather.temperature * 100),
 		"conditions": weather.conditions + (weather.isDay ? 1000 : 0)
@@ -207,8 +202,8 @@ function sendWeather(weather) {
 }
 
 function sendPreferences(prefs) {
-	//Clear lastUpdate when updating preferences
-	//so any provider updates will take effect instantly.
+	// Clear lastUpdate when updating preferences
+	// so any provider updates will take effect instantly.
 	weather.lastUpdate = 0;
 	Pebble.sendAppMessage(mergeObjects(prefs, {"setPrefs": 1}));
 }
@@ -228,7 +223,7 @@ function queryify(obj) {
 
 
 Pebble.addEventListener("ready", function(e) { 
-    prevMessages = {};  
+    prevMessages = {};
     fetchWeather();
 });
 

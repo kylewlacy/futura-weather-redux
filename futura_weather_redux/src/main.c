@@ -14,18 +14,25 @@ GFont futura_35;
 GFont futura_40;
 GFont futura_53;
 
+static Layer *statusbar_layer;
+static BitmapLayer *statusbar_battery_layer;
+static uint32_t statusbar_battery_resource;
+static GBitmap *statusbar_battery_bitmap = NULL;
+static GRect default_statusbar_frame;
+
 static TextLayer *time_layer;
+GRect default_time_frame;
+
 static TextLayer *date_layer;
+GRect default_date_frame;
 
 static Layer *weather_layer;
 static TextLayer *weather_temperature_layer;
 static BitmapLayer *weather_icon_layer;
 static GBitmap *weather_icon_bitmap = NULL;
+GRect default_weather_frame;
 
-static Layer *statusbar_layer;
-static BitmapLayer *statusbar_battery_layer;
-static uint32_t statusbar_battery_resource;
-static GBitmap *statusbar_battery_bitmap = NULL;
+
 
 static Preferences *prefs;
 static Weather *weather;
@@ -152,16 +159,17 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 		if(!weather_needs_update(weather, new_prefs->weather_update_freq))
 			update_weather_info(weather);
 	}
-	if(old_prefs == NULL || old_prefs->provider != new_prefs->provider) {
+	if(old_prefs == NULL || old_prefs->weather_provider != new_prefs->weather_provider) {
 		weather_request_update();
 	}
-	if(old_prefs == NULL || old_prefs->language != new_prefs->language) {
-		force_tick(ALL_UNITS);
-	}   
+	// if(old_prefs == NULL || old_prefs->language != new_prefs->language) {
+	//	force_tick(ALL_UNITS);
+	// }
 	if(old_prefs == NULL || old_prefs->statusbar != new_prefs->statusbar) {
-		GRect statusbar_frame = GRect(0, 0, 144, 15);
-		GRect time_frame = GRect(0, 2, 144, 162);
-		GRect date_frame = GRect(1, 74, 144, 106);
+		// TODO: Move this to a method
+		GRect statusbar_frame = default_statusbar_frame;
+		GRect time_frame = default_time_frame;
+		GRect date_frame = default_date_frame;
 		
 		if(new_prefs->statusbar) {
 			time_frame.origin.y += 8;
@@ -193,8 +201,62 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 			animation_schedule(&time_animation->animation);
 			animation_schedule(&date_animation->animation);
 		}
+		
+		if(old_prefs == NULL) {
+			set_weather_visible(!weather_needs_update(weather, new_prefs->weather_update_freq), false);
+		}
 	}
 }
+
+void set_weather_visible(bool visible, bool animate) {
+	// TODO: Get the 'intended' value of each (consider the statusbar, for example)
+	GRect time_frame = default_time_frame;
+	GRect date_frame = default_date_frame;
+	GRect weather_frame = default_weather_frame;
+	
+	if(!visible) {
+		time_frame.origin.y = 30;
+		date_frame.origin.y = 103;
+		weather_frame.origin.y = 168;
+	}
+	
+	if(animate) {
+		layer_set_hidden(weather_layer, !visible);
+		PropertyAnimation *time_animation = property_animation_create_layer_frame(text_layer_get_layer(time_layer), NULL, &time_frame);
+		PropertyAnimation *date_animation = property_animation_create_layer_frame(text_layer_get_layer(date_layer), NULL, &date_frame);
+		PropertyAnimation *weather_animation = property_animation_create_layer_frame(weather_layer, NULL, &weather_frame);
+		
+		animation_set_delay(&time_animation->animation, 300);
+		animation_set_delay(&date_animation->animation, 150);
+		animation_set_delay(&weather_animation->animation, 0);
+		
+		animation_set_duration(&time_animation->animation, 350);
+		animation_set_duration(&date_animation->animation, 350);
+		animation_set_duration(&weather_animation->animation, 500);
+		
+		animation_set_curve(&weather_animation->animation, visible ? AnimationCurveEaseOut : AnimationCurveEaseIn);
+		
+		AnimationHandlers weather_animation_handlers = { .stopped = set_weather_visible_animation_stopped_handler };
+		animation_set_handlers(&weather_animation->animation, weather_animation_handlers, visible ? (void*)1 : (void*)0);
+		
+		animation_schedule(&time_animation->animation);
+		animation_schedule(&date_animation->animation);
+		animation_schedule(&weather_animation->animation);
+	}
+	else {
+		layer_set_frame(text_layer_get_layer(time_layer), time_frame);
+		layer_set_frame(text_layer_get_layer(date_layer), date_frame);
+		layer_set_frame(weather_layer, weather_frame);
+		layer_set_hidden(weather_layer, !visible);
+	}
+}
+
+void set_weather_visible_animation_stopped_handler(Animation *animation, bool finished, void *context) {
+	if(finished)
+		layer_set_hidden(weather_layer, context == 0);
+}
+
+
 
 void update_weather_info(Weather *weather) {
     if(weather->conditions % 1000) {
@@ -226,6 +288,8 @@ void update_weather_info(Weather *weather) {
             gbitmap_destroy(weather_icon_bitmap);
         weather_icon_bitmap = gbitmap_create_with_resource(get_resource_for_weather_conditions(weather->conditions));
         bitmap_layer_set_bitmap(weather_icon_layer, weather_icon_bitmap);
+		
+		set_weather_visible(true, true);
     }
 }
 
@@ -304,15 +368,26 @@ void window_load(Window *window) {
     futura_35 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FUTURA_35));
     futura_40 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FUTURA_40));
     futura_53 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FUTURA_CONDENSED_53));
+	
+	
+	
+	statusbar_layer = layer_create(default_statusbar_frame = GRect(0, 0, 144, 15));
+	
+	statusbar_battery_layer = bitmap_layer_create(GRect(125, 3, 16, 10));
+	layer_add_child(statusbar_layer, bitmap_layer_get_layer(statusbar_battery_layer));
+	
+	layer_add_child(window_layer, statusbar_layer);
+	
+	
     
-    time_layer = text_layer_create(GRect(0, 2, 144, 168-6));
+    time_layer = text_layer_create(default_time_frame = GRect(0, 2, 144, 162));
     text_layer_set_text_alignment(time_layer, GTextAlignmentCenter);
     text_layer_set_background_color(time_layer, GColorClear);
     text_layer_set_text_color(time_layer, GColorWhite);
     text_layer_set_font(time_layer, futura_53);
     layer_add_child(window_layer, text_layer_get_layer(time_layer));
     
-    date_layer = text_layer_create(GRect(1, 74, 144, 168-62));
+    date_layer = text_layer_create(default_date_frame = GRect(1, 74, 144, 106));
     text_layer_set_text_alignment(date_layer, GTextAlignmentCenter);
     text_layer_set_background_color(date_layer, GColorClear);
     text_layer_set_text_color(date_layer, GColorWhite);
@@ -321,7 +396,7 @@ void window_load(Window *window) {
     
     
 	
-    weather_layer = layer_create(GRect(0, 90, 144, 80));
+    weather_layer = layer_create(default_weather_frame = GRect(0, 90, 144, 80));
     
     weather_icon_layer = bitmap_layer_create(GRect(9, 13, 60, 60));
     layer_add_child(weather_layer, bitmap_layer_get_layer(weather_icon_layer));
@@ -334,15 +409,6 @@ void window_load(Window *window) {
     layer_add_child(weather_layer, text_layer_get_layer(weather_temperature_layer));
     
     layer_add_child(window_layer, weather_layer);
-	
-	
-	
-	statusbar_layer = layer_create(GRect(0, 0, 144, 15));
-	
-	statusbar_battery_layer = bitmap_layer_create(GRect(125, 3, 16, 10));
-	layer_add_child(statusbar_layer, bitmap_layer_get_layer(statusbar_battery_layer));
-	
-	layer_add_child(window_layer, statusbar_layer);
 	
 	
 	
@@ -404,9 +470,11 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
         text_layer_set_text(date_layer, date_text);
     }
     
-	// TOOD: Tell don't ask
-    if(weather_needs_update(weather, prefs->weather_update_freq))
+	bool outdated = weather_needs_update(weather, prefs->weather_outdated_time);
+    if(outdated || weather_needs_update(weather, prefs->weather_update_freq))
         weather_request_update();
+	if(outdated)
+		set_weather_visible(false, true);
 }
 
 void handle_battery(BatteryChargeState battery) {
