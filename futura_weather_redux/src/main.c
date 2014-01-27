@@ -394,8 +394,8 @@ void init() {
     app_message_register_outbox_sent(out_sent_handler);
     app_message_register_outbox_failed(out_failed_handler);
     
-    const uint32_t inbound_size = 256;
-    const uint32_t outbound_size = 256;
+    const uint32_t inbound_size = app_message_inbox_size_maximum();
+    const uint32_t outbound_size = app_message_outbox_size_maximum();
     app_message_open(inbound_size, outbound_size);
 	
 	prefs = preferences_load();
