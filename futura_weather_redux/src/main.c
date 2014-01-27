@@ -35,10 +35,10 @@ static BitmapLayer *weather_icon_layer;
 static GBitmap *weather_icon_bitmap = NULL;
 GRect default_weather_frame;
 
-
-
 static Preferences *prefs;
 static Weather *weather;
+
+
 
 uint32_t get_resource_for_weather_conditions(uint32_t conditions) {
 	bool is_day = conditions >= 1000;
@@ -207,9 +207,10 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 	if(old_prefs == NULL || old_prefs->weather_provider != new_prefs->weather_provider) {
 		weather_request_update();
 	}
-	// if(old_prefs == NULL || old_prefs->language != new_prefs->language) {
-	//	force_tick(ALL_UNITS);
-	// }
+	if(old_prefs != NULL && old_prefs->language_code != new_prefs->language_code) {
+		// Update the current date (but not the time)
+		force_tick(DAY_UNIT | MONTH_UNIT | YEAR_UNIT);
+	}
 	if(old_prefs == NULL || old_prefs->statusbar != new_prefs->statusbar) {
 		GRect statusbar_frame = get_statusbar_frame(new_prefs);
 		GRect time_frame = get_time_frame(new_prefs, true);
@@ -374,6 +375,66 @@ void in_dropped_handler(AppMessageResult reason, void *context) {
 
 
 
+// TODO: Move this somewhere else
+unsigned long get_string_between_delimiters_at_index(char* buffer, size_t buffer_size, char* str, char delim, unsigned long index) {
+	char* start = str;
+	unsigned long str_length = strlen(str);
+	char* end = str + str_length;
+	
+	memset(buffer, 0, buffer_size);
+	
+	while(index > 0 && start < end) {
+		if(start[0] == delim)
+			index--;
+		start++;
+	}
+	
+	unsigned long length = 0;
+	while(start[length] != delim && start[length] != 0) {
+		length++;
+	}
+	
+	length = (length > str_length) ? str_length : length;           // Prevent reading beyond the string
+	length++;                                                       // Make room for null character
+	length = (length + 1 > buffer_size) ? buffer_size - 1 : length; // Prevent buffer overflow
+	
+	if(length > 1) {
+		memcpy(buffer, start, length - 1);
+		buffer[length] = 0; // Ensure that buffer ends with a null-terminating character
+	}
+	else {
+		buffer[0] = 0;
+		length = 0;
+	}
+	
+	return length;
+}
+
+void format_time(char* buffer, size_t buffer_length, struct tm *now, bool is_24h) {
+	strftime(buffer, buffer_length, clock_is_24h_style() ? "%H:%M" : "%I:%M", now);
+}
+
+void format_date(char* buffer, size_t buffer_length, struct tm *now, Preferences *prefs) {
+	int month, day_of_month, day_of_week;
+	char weekday[10], month_name[10];
+	
+	month = now->tm_mon;
+	day_of_month = now->tm_mday;
+	day_of_week = ((now->tm_wday + 6) % 7); // tm_wday defines 0 as Sunday, we want 0 as Monday
+	
+	get_string_between_delimiters_at_index(weekday, sizeof(weekday), prefs->translation, ',', day_of_week + 12);
+	get_string_between_delimiters_at_index(month_name, sizeof(month_name), prefs->translation, ',', month);
+	
+	snprintf(buffer, buffer_length, "%s %s %d", weekday, month_name, day_of_month);
+	
+	if(strlen(buffer) <= 0) {
+		APP_LOG(APP_LOG_LEVEL_WARNING, "Failed to interpret translation %d (%s)", prefs->language_code, prefs->translation);
+		strftime(buffer, buffer_length, "%a %b %d", now); // Fallback
+	}
+}
+
+
+
 int main() {
     init();
     app_event_loop();
@@ -511,14 +572,15 @@ void deinit() {
 void handle_tick(struct tm *now, TimeUnits units_changed) {
     if(units_changed & MINUTE_UNIT) {
         static char time_text[6];
-		strftime(time_text, 6, clock_is_24h_style() ? "%H:%M" : "%I:%M", now);
+		format_time(time_text, sizeof(time_text), now, clock_is_24h_style());
 		
         text_layer_set_text(time_layer, time_text);
     }
     
     if(units_changed & DAY_UNIT) {
         static char date_text[18]; // 18 characters should be enougth to fit the most common language formats
-        strftime(date_text, sizeof(date_text), "%a %b %d",  now);
+		format_date(date_text, sizeof(date_text), now, prefs);
+		
         text_layer_set_text(date_layer, date_text);
     }
     

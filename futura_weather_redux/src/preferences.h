@@ -9,6 +9,8 @@ typedef struct {
 	bool statusbar;
 	int weather_provider;
 	time_t weather_outdated_time;
+	int language_code;
+	char translation[256];
 } Preferences;
 
 Preferences* preferences_load();

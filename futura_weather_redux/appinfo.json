@@ -19,7 +19,9 @@
 		"weatherUpdateFreq": 7,
 		"statusbar": 8,
 		"weatherOutdatedTime": 9,
-		"weatherProvider": 10
+		"weatherProvider": 10,
+		"languageCode": 11,
+		"translation": 12
 	},
 	"resources": {
 		"media": [

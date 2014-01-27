@@ -5,7 +5,9 @@ var prefs = {
 	"weatherUpdateFreq": 10 * 60,
 	"statusbar": 0,
 	"weatherProvider": 1,
-	"weatherOutdatedTime": 60 * 60
+	"weatherOutdatedTime": 60 * 60,
+	"languageCode": 0,
+	"translation": "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec,Mon,Tue,Wed,Thu,Fri,Sat,Sun"
 };
 
 var weather = {
@@ -13,7 +15,6 @@ var weather = {
 	"conditions": 0,
 	"lastUpdate": 0
 };
-var prevMessages = {};
 
 var maxWeatherUpdateFreq = 10 * 60;
 
@@ -202,11 +203,67 @@ function sendWeather(weather) {
 }
 
 function sendPreferences(prefs) {
-	// Clear lastUpdate when updating preferences
-	// so any provider updates will take effect instantly.
-	weather.lastUpdate = 0;
-	Pebble.sendAppMessage(mergeObjects(prefs, {"setPrefs": 1}));
+	var newPrefs = copyObject(prefs);
+	newPrefs.translation = prepareString(newPrefs.translation);
+	
+	Pebble.sendAppMessage(mergeObjects(newPrefs, {"setPrefs": 1}));
 }
+
+
+
+// http://stackoverflow.com/a/990922/1311454
+function removeDiacritics(string) {
+	var newString = string;
+	
+	string = string.replace(new RegExp("[àáâãäå]", 'g'),"a");
+	string = string.replace(new RegExp("æ", 'g'),"ae");
+	string = string.replace(new RegExp("[çćč]", 'g'),"c");
+	string = string.replace(new RegExp("[èéêëēėę]", 'g'),"e");
+	string = string.replace(new RegExp("[îïíīįì]", 'g'),"i");
+	string = string.replace(new RegExp("[ñń]", 'g'),"n");                            
+	string = string.replace(new RegExp("[òóôõöøō]", 'g'),"o");
+	string = string.replace(new RegExp("œ", 'g'),"oe");
+	string = string.replace(new RegExp("[ùúûüū]", 'g'),"u");
+	string = string.replace(new RegExp("[ýÿ]", 'g'),"y");
+	
+	
+	string = string.replace(new RegExp("[ÀÁÂÄÃÅĀ]", 'g'),"A");
+	string = string.replace(new RegExp("Æ", 'g'),"AE");
+	string = string.replace(new RegExp("[ÇĆČ]", 'g'),"C");
+	string = string.replace(new RegExp("[ÈÉÊËĒĖĘ]", 'g'),"E");
+	string = string.replace(new RegExp("[ÎÏÍĪĮÌ]", 'g'),"I");
+	string = string.replace(new RegExp("[ÑŃ]", 'g'),"N");                            
+	string = string.replace(new RegExp("[ÒÓÔÕÖØŌ]", 'g'),"O");
+	string = string.replace(new RegExp("Œ", 'g'),"OE");
+	string = string.replace(new RegExp("[ÙÚÛÜŪ]", 'g'),"U");
+	string = string.replace(new RegExp("[ÝŸ]", 'g'),"Y");
+	
+	return newString;
+}
+
+// http://stackoverflow.com/a/14613269/1311454
+function removeUnicode(string) {
+	return string.replace(/[^\x00-\x80]/g, '');
+}
+
+// Cuts out accent marks (since Pebble doesn't support Unicode)
+// TODO: Render accents (maybe using canvas?)
+// Another possiblity: make a fontface with only accent marks
+// (same spacing) and render it on top of the date text
+function prepareString(string) {
+	var noDiacritics = removeDiacritics(string);
+	var noUnicode = removeUnicode(noDiacritics);
+	if(noUnicode !== noDiacritics)
+		console.warn("Error removing diacritics (diacritic-less is " + noDiacritics + ", unicode-less is " + noUnicode + ")");
+		
+	return noUnicode;
+}
+
+// http://stackoverflow.com/a/1431113/1311454
+function replaceStringCharacterAtIndex(string, index, character) {
+	return string.substr(0, index) + character + string.substr(index+character.length);
+}
+
 
 
 function mergeObjects(a, b) {
@@ -215,6 +272,14 @@ function mergeObjects(a, b) {
 	return a;
 }
 
+function copyObject(obj) {
+	var new_obj = {};
+	for(var key in obj) { new_obj[key] = obj[key]; }
+	return new_obj;
+}
+
+
+
 function queryify(obj) {
 	var queries = [];
 	for(var key in obj) { queries.push(key + "=" + obj[key]) };
@@ -222,8 +287,7 @@ function queryify(obj) {
 }
 
 
-Pebble.addEventListener("ready", function(e) { 
-    prevMessages = {};
+Pebble.addEventListener("ready", function(e) {     
     fetchWeather();
 });
 
@@ -243,15 +307,25 @@ Pebble.addEventListener("appmessage", function(e) {
 });
 
 Pebble.addEventListener("showConfiguration", function() {
-	Pebble.openURL(configURL + queryify(prefs));
+	// Send everything but the acutual translation
+	var webPrefs = copyObject(prefs);
+	delete webPrefs.translation;
+	
+	Pebble.openURL(configURL + queryify(webPrefs));
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {
 	if(e && e.response) {
+		// Clear lastUpdate when updating preferences
+		// so any provider updates will take effect instantly.
+		// TODO: Only clear when the provider has actually changed
+		weather.lastUpdate = 0;
+	
 		var newPrefs = JSON.parse(e.response);
 		for(var key in prefs) {
 			if(newPrefs[key] !== "undefined")
-				prefs[key] = parseInt(newPrefs[key]);
+				// Only prefs.translation should be a string
+				prefs[key] = (key === "translation" ? newPrefs[key] : parseInt(newPrefs[key]));
 		}
 		
 		sendPreferences(prefs);
