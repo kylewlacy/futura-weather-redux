@@ -324,8 +324,10 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		var newPrefs = JSON.parse(e.response);
 		for(var key in prefs) {
 			if(newPrefs[key] !== "undefined")
-				// Only prefs.translation should be a string
-				prefs[key] = (key === "translation" ? newPrefs[key] : parseInt(newPrefs[key]));
+				if(key === "translation")
+					prefs[key] = newPrefs[key].join(",");
+				else
+					prefs[key] = parseInt(newPrefs[key]);
 		}
 		
 		sendPreferences(prefs);
