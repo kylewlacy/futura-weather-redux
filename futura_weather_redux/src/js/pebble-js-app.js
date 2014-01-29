@@ -18,6 +18,7 @@ var weather = {
 
 var maxWeatherUpdateFreq = 10 * 60;
 
+
 var yahooConditionToOpenWeatherMapCondition = {
   0  : 900, // Tornado
   1  : 901, // Tropical storm
@@ -45,7 +46,7 @@ var yahooConditionToOpenWeatherMapCondition = {
   23 : 905, // Blustery
   24 : 905, // Windy
   25 : 903, // Cold
-  26 : 802, // Cloudy
+  26 : 804, // Cloudy
   27 : 804, // Mostly cloudy (night)
   28 : 804, // Mostly cloudy (day)
   29 : 801, // Partly cloudy (night)
@@ -69,6 +70,67 @@ var yahooConditionToOpenWeatherMapCondition = {
   47 : 210, // Isolated thundershowers
   3200 : 0, // Not available
 };
+
+var yrNoConditionToOpenWeatherMapCondition = {
+    1 : 800, //SUN
+    2 : 801, ////LIGHTCLOUD
+    3 : 801, //PARTLYCLOUD
+    4 : 804, //CLOUD
+    5 : 500, //LIGHTRAINSUN
+    6 : 210, //LIGHTRAINTHUNDERSUN
+    7 : 611, //SLEETSUN
+    8 : 600, //SNOWSUN
+    9 : 500, //LIGHTRAIN
+    10 : 501, //RAIN
+    11 : 210, //RAINTHUNDER
+    12 : 611, //SLEET
+    13 : 601, //SNOW
+    14 : 211, //SNOWTHUNDER
+    15 : 741, //FOG
+    16 : 800, //SUN ( used for winter darkness )
+    17 : 801, //LIGHTCLOUD ( winter darkness )
+    18 : 500, //LIGHTRAINSUN ( used for winter darkness )
+    19 : 600, //SNOWSUN ( used for winter darkness )
+    20 : 211, //SLEETSUNTHUNDER
+    21 : 211, //SNOWSUNTHUNDER
+    22 : 200, //LIGHTRAINTHUNDER
+    23 : 211, //SLEETTHUNDER
+}
+
+function fetchWeatherYrNo(coords) {
+		var xml;
+		var req = new XMLHttpRequest();
+        var url = "http://api.yr.no/weatherapi/locationforecastlts/1.1/?lat=" + coords.latitude + ";lon=" + coords.longitude;
+		req.open("GET", url, true);
+		req.onload = function(e) {
+			if (req.readyState == 4) {
+				if(req.status == 200) {
+                    xml = req.responseXML.documentElement;
+					if (xml) {
+                        var currentSymbolElem = xml.getElementsByTagName("symbol")[0];
+                        var weatherCode = currentSymbolElem.attributes[1].value;
+                        var temperature = (xml.getElementsByTagName("temperature")[0]).getAttribute("value");
+                        var tempKelvin = 273.15 + Number(temperature);
+						var now = new Date();
+						var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
+						
+                        //console.log("fetchWeatherYrNo temp " + temperature);
+                        //console.log("fetchWeatherYrNo weatherCode " + weatherCode);
+						sendWeather(weather = {
+							"temperature": tempKelvin,
+                            "conditions": yrNoConditionToOpenWeatherMapCondition[weatherCode],
+							"isDay": sunCalc.sunset > now && now > sunCalc.sunrise,
+							"lastUpdate": Math.round(now.getTime() / 1000)
+						});
+					}
+				}
+				else {
+					console.log("Error getting weather info (status " + req.status + ")");
+				}
+			}
+		}
+		req.send(null);
+}
 
 function fetchWeatherYahoo(coords) {
     var woeid = -1;
@@ -163,12 +225,16 @@ function fetchWeatherOpenWeatherMap(coords) {
 function fetchWeatherFromPos(pos) {
     switch (prefs.weatherProvider) {
         case 1: // OpenWeatherMap
-        default:
             fetchWeatherOpenWeatherMap(pos.coords);
             break;
         case 2: // Yahoo! Weather
             fetchWeatherYahoo(pos.coords);
             break;
+        case 3: // yr.no
+            fetchWeatherYrNo(pos.coords);
+            break;
+        default:
+            fetchWeatherOpenWeatherMap(pos.coords);
     }
 }
 
