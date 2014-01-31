@@ -411,7 +411,7 @@ unsigned long get_string_between_delimiters_at_index(char* buffer, size_t buffer
 }
 
 void format_time(char* buffer, size_t buffer_length, struct tm *now, bool is_24h) {
-	strftime(buffer, buffer_length, clock_is_24h_style() ? "%H:%M" : "%I:%M", now);
+	strftime(buffer, buffer_length, is_24h ? "%H:%M" : "%I:%M", now);
 }
 
 void format_date(char* buffer, size_t buffer_length, struct tm *now, Preferences *prefs) {
