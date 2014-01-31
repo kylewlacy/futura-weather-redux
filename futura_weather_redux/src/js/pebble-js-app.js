@@ -277,57 +277,16 @@ function sendPreferences(prefs) {
 
 
 
-// http://stackoverflow.com/a/990922/1311454
-function removeDiacritics(string) {
-	var newString = string;
-	
-	string = string.replace(new RegExp("[àáâãäå]", 'g'),"a");
-	string = string.replace(new RegExp("æ", 'g'),"ae");
-	string = string.replace(new RegExp("[çćč]", 'g'),"c");
-	string = string.replace(new RegExp("[èéêëēėę]", 'g'),"e");
-	string = string.replace(new RegExp("[îïíīįì]", 'g'),"i");
-	string = string.replace(new RegExp("[ñń]", 'g'),"n");                            
-	string = string.replace(new RegExp("[òóôõöøō]", 'g'),"o");
-	string = string.replace(new RegExp("œ", 'g'),"oe");
-	string = string.replace(new RegExp("[ùúûüū]", 'g'),"u");
-	string = string.replace(new RegExp("[ýÿ]", 'g'),"y");
-	
-	
-	string = string.replace(new RegExp("[ÀÁÂÄÃÅĀ]", 'g'),"A");
-	string = string.replace(new RegExp("Æ", 'g'),"AE");
-	string = string.replace(new RegExp("[ÇĆČ]", 'g'),"C");
-	string = string.replace(new RegExp("[ÈÉÊËĒĖĘ]", 'g'),"E");
-	string = string.replace(new RegExp("[ÎÏÍĪĮÌ]", 'g'),"I");
-	string = string.replace(new RegExp("[ÑŃ]", 'g'),"N");                            
-	string = string.replace(new RegExp("[ÒÓÔÕÖØŌ]", 'g'),"O");
-	string = string.replace(new RegExp("Œ", 'g'),"OE");
-	string = string.replace(new RegExp("[ÙÚÛÜŪ]", 'g'),"U");
-	string = string.replace(new RegExp("[ÝŸ]", 'g'),"Y");
-	
-	return newString;
-}
-
-// http://stackoverflow.com/a/14613269/1311454
-function removeUnicode(string) {
-	return string.replace(/[^\x00-\x80]/g, '');
-}
-
-// Cuts out accent marks (since Pebble doesn't support Unicode)
-// TODO: Render accents (maybe using canvas?)
-// Another possiblity: make a fontface with only accent marks
-// (same spacing) and render it on top of the date text
+// Encodes string as byte array. Somehow,
+// this actually makes UTF-8 work properly.
 function prepareString(string) {
-	var noDiacritics = removeDiacritics(string);
-	var noUnicode = removeUnicode(noDiacritics);
-	if(noUnicode !== noDiacritics)
-		console.warn("Error removing diacritics (diacritic-less is " + noDiacritics + ", unicode-less is " + noUnicode + ")");
-		
-	return noUnicode;
-}
-
-// http://stackoverflow.com/a/1431113/1311454
-function replaceStringCharacterAtIndex(string, index, character) {
-	return string.substr(0, index) + character + string.substr(index+character.length);
+	var bytes = [];
+	for(var i = 0; i < string.length; i++) {
+		bytes.push(string[i].charCodeAt(0));
+	}
+	
+	bytes.push(0); // Null-terminate
+	return bytes;
 }
 
 

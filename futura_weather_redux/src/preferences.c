@@ -98,6 +98,4 @@ void preferences_set(Preferences *prefs, DictionaryIterator *iter) {
 		prefs->language_code = language_code->value->int32;
 	if(translation != NULL)
 		strcpy(prefs->translation, translation->value->cstring);
-	
-	APP_LOG(APP_LOG_LEVEL_INFO, "%s", prefs->translation);
 }
