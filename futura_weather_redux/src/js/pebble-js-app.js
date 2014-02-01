@@ -1,299 +1,475 @@
-var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
-
-var prefs = {
-	"tempFormat": 1,
-	"weatherUpdateFreq": 10 * 60,
-	"statusbar": 0,
-	"weatherProvider": 1,
-	"weatherOutdatedTime": 60 * 60,
-	"languageCode": 0,
-	"translation": "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec,Mon,Tue,Wed,Thu,Fri,Sat,Sun"
-};
-
-var weather = {
-	"temperature": -461,
-	"conditions": 0,
-	"lastUpdate": 0
-};
-
-var maxWeatherUpdateFreq = 10 * 60;
-
-
-var yahooConditionToOpenWeatherMapCondition = {
-  0  : 900, // Tornado
-  1  : 901, // Tropical storm
-  2  : 902, // Hurricane
-  3  : 212, // Severe thunderstorms
-  4  : 211, // Thunderstorms
-  5  : 511, // Mixed rain and snow
-  6  : 611, // Mixed rain and sleet
-  7  : 611, // Mixed snow and sleet
-  8  : 511, // Freezing drizzle
-  9  : 301, // Drizzle
-  10 : 511, // Freezing rain
-  11 : 521, // Showers
-  12 : 521, // Showers
-  13 : 601, // Snow flurries
-  14 : 621, // Light snow showers
-  15 : 602, // Blowing snow
-  16 : 602, // Snow
-  17 : 906, // Hail
-  18 : 611, // Sleet
-  19 : 731, // Dust
-  20 : 741, // Foggy
-  21 : 721, // Haze
-  22 : 711, // Smoky
-  23 : 905, // Blustery
-  24 : 905, // Windy
-  25 : 903, // Cold
-  26 : 804, // Cloudy
-  27 : 804, // Mostly cloudy (night)
-  28 : 804, // Mostly cloudy (day)
-  29 : 801, // Partly cloudy (night)
-  30 : 801, // Partly cloudy (day)
-  31 : 800, // Clear (night)
-  32 : 800, // Sunny
-  33 : 800, // Fair (night)
-  34 : 800, // Fair (day)
-  35 : 906, // Mixed rain and hail
-  36 : 904, // Hot
-  37 : 210, // Isolated thunderstorms
-  38 : 211, // Scattered thunderstorms
-  39 : 211, // Scattered thunderstorms
-  40 : 521, // Scattered showers
-  41 : 602, // Heavy snow
-  42 : 621, // Scattered snow showers
-  43 : 602, // Heavy snow
-  44 : 801, // Partly cloudy
-  45 : 201, // Thundershowers
-  46 : 621, // Snow showers
-  47 : 210, // Isolated thundershowers
-  3200 : 0, // Not available
-};
-
-var yrNoConditionToOpenWeatherMapCondition = {
-    1 : 800, //SUN
-    2 : 801, ////LIGHTCLOUD
-    3 : 801, //PARTLYCLOUD
-    4 : 804, //CLOUD
-    5 : 500, //LIGHTRAINSUN
-    6 : 210, //LIGHTRAINTHUNDERSUN
-    7 : 611, //SLEETSUN
-    8 : 600, //SNOWSUN
-    9 : 500, //LIGHTRAIN
-    10 : 501, //RAIN
-    11 : 210, //RAINTHUNDER
-    12 : 611, //SLEET
-    13 : 601, //SNOW
-    14 : 211, //SNOWTHUNDER
-    15 : 741, //FOG
-    16 : 800, //SUN ( used for winter darkness )
-    17 : 801, //LIGHTCLOUD ( winter darkness )
-    18 : 500, //LIGHTRAINSUN ( used for winter darkness )
-    19 : 600, //SNOWSUN ( used for winter darkness )
-    20 : 211, //SLEETSUNTHUNDER
-    21 : 211, //SNOWSUNTHUNDER
-    22 : 200, //LIGHTRAINTHUNDER
-    23 : 211, //SLEETTHUNDER
-}
-
-function fetchWeatherYrNo(coords) {
-		var xml;
-		var req = new XMLHttpRequest();
-        var url = "http://api.yr.no/weatherapi/locationforecastlts/1.1/?lat=" + coords.latitude + ";lon=" + coords.longitude;
-		req.open("GET", url, true);
-		req.onload = function(e) {
-			if (req.readyState == 4) {
-				if(req.status == 200) {
-                    xml = req.responseXML.documentElement;
-					if (xml) {
-                        var currentSymbolElem = xml.getElementsByTagName("symbol")[0];
-                        var weatherCode = currentSymbolElem.attributes[1].value;
-                        var temperature = (xml.getElementsByTagName("temperature")[0]).getAttribute("value");
-                        var tempKelvin = 273.15 + Number(temperature);
-						var now = new Date();
-						var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
-						
-                        //console.log("fetchWeatherYrNo temp " + temperature);
-                        //console.log("fetchWeatherYrNo weatherCode " + weatherCode);
-						sendWeather(weather = {
-							"temperature": tempKelvin,
-                            "conditions": yrNoConditionToOpenWeatherMapCondition[weatherCode],
-							"isDay": sunCalc.sunset > now && now > sunCalc.sunrise,
-							"lastUpdate": Math.round(now.getTime() / 1000)
-						});
-					}
-				}
-				else {
-					console.log("Error getting weather info (status " + req.status + ")");
-				}
-			}
-		}
-		req.send(null);
-}
-
-function fetchWeatherYahoo(coords) {
-    var woeid = -1;
-    var query = encodeURI("select woeid from geo.placefinder where text=\""+coords.latitude+","+coords.longitude + "\" and gflags=\"R\"");
-    var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
-    
-    var response;
-    var req = new XMLHttpRequest();
-    req.open("GET", url, true);
-    req.onload = function(e) {
-        if (req.readyState == 4) {
-            if (req.status == 200) {
-                response = JSON.parse(req.responseText);
-                if (response) {
-                    woeid = response.query.results.Result.woeid;
-                    getWeatherYahooByWoeid(woeid,coords);
-                }
-            } else {
-                console.log("Error");
-            }
-        }
-    }
-    req.send(null);
-}
-
-function getWeatherYahooByWoeid(woeid,coords) {
-  var celsius = 1;
-  var query = encodeURI("select item.condition from weather.forecast where woeid = " + woeid +
-                        " and u = \"c\"");
-  var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
-
-  var response;
-  var req = new XMLHttpRequest();
-  req.open("GET", url, true);
-  req.onload = function(e) {
-    if (req.readyState == 4) {
-      if (req.status == 200) {
-        response = JSON.parse(req.responseText);
-        if (response) {
-          var condition = response.query.results.channel.item.condition;
-          
-          //Convert to Kelvin
-          var temp = Number(condition.temp) + 273.15;
-          var now = new Date();
-          var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
-          
-          sendWeather(weather = {
-              "temperature": temp,
-              "conditions": yahooConditionToOpenWeatherMapCondition[condition.code],
-              "isDay": sunCalc.sunset > now && now > sunCalc.sunrise,
-              "lastUpdate": Math.round(now.getTime() / 1000)
-          });
-        }
-      } else {
-        console.log("Error");
-      }
-    }
-  }
-  req.send(null);
-}
-
-function fetchWeatherOpenWeatherMap(coords) {
-		var response;
-		var req = new XMLHttpRequest();
-		req.open("GET", "http://api.openweathermap.org/data/2.5/find?lat=" + coords.latitude + "&lon=" + coords.longitude + "&cnt=1", true);
-		req.onload = function(e) {
-			if (req.readyState == 4) {
-				if(req.status == 200) {
-					response = JSON.parse(req.responseText);
-					if (response && response.list && response.list.length > 0) {
-						var weatherResult = response.list[0];
-						
-						var now = new Date();
-						var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
-						
-						sendWeather(weather = {
-							"temperature": weatherResult.main.temp,
-							"conditions": weatherResult.weather[0].id,
-							"isDay": sunCalc.sunset > now && now > sunCalc.sunrise,
-							"lastUpdate": Math.round(now.getTime() / 1000)
-						});
-					}
-				}
-				else {
-					console.log("Error getting weather info (status " + req.status + ")");
-				}
-			}
-		}
-		req.send(null);
-}
-
-function fetchWeatherFromPos(pos) {
-    switch (prefs.weatherProvider) {
-        case 1: // OpenWeatherMap
-            fetchWeatherOpenWeatherMap(pos.coords);
-            break;
-        case 2: // Yahoo! Weather
-            fetchWeatherYahoo(pos.coords);
-            break;
-        case 3: // yr.no
-            fetchWeatherYrNo(pos.coords);
-            break;
-        default:
-            fetchWeatherOpenWeatherMap(pos.coords);
-    }
-}
-
-function fetchWeather() {
-    if(Math.round(Date.now()/1000) - weather.lastUpdate >= maxWeatherUpdateFreq) {
-        window.navigator.geolocation.getCurrentPosition(fetchWeatherFromPos,
-                locationError,
-                { "timeout": 15000, "maximumAge": 60000 });
-    }
-    else {
-        console.warn("Weather update requested too soon; loading from cache (" + (new Date()).toString() + ")");
-        sendWeather(weather);
-    }
-}
-
-function locationError(err) {
-    console.warn("location error (" + err.code + "): " + err.message);
-    sendWeather({
-        "temperature": 0,
-        "conditions": 0,
-        "isDay": 0,
-        "lastUpdate": Math.round(now.getTime() / 1000)
-    });
-}
-
-
-function sendWeather(weather) {
-	Pebble.sendAppMessage(mergeObjects({
-		"temperature": Math.round(weather.temperature * 100),
-		"conditions": weather.conditions + (weather.isDay ? 1000 : 0)
-	}, {"setWeather": 1}));
-}
-
-function sendPreferences(prefs) {
-	var newPrefs = copyObject(prefs);
-	newPrefs.translation = prepareString(newPrefs.translation);
+function Preferences() {
+	this.tempFormat = 1;
+	this.weatherUpdateFreq = 10 * 60;
+	this.statusbar = 0;
+	this.weatherProvider = 1;
+	this.weatherOutdatedTime = 60 * 60;
+	this.languageCode = 0;
+	this.translation = "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec,Mon,Tue,Wed,Thu,Fri,Sat,Sun";
 	
-	Pebble.sendAppMessage(mergeObjects(newPrefs, {"setPrefs": 1}));
+	this.setFromJsonObject = function(newPrefs) {
+		for(var key in getProperties(this)) {
+			if(typeof(newPrefs[key]) !== "undefined") {
+				if(key === "translation") {
+					this[key] = newPrefs[key].join(",");
+				}
+				else {
+					this[key] = parseInt(newPrefs[key]);
+				}
+			}
+		}
+	}
+	
+	this.asMessage = function() {
+		var prefs = copyObject(getProperties(this));
+		prefs.translation = prepareString(prefs.translation);
+		
+		return mergeObjects(prefs, {"setPrefs": 1});
+	}
+	
+	this.asQueryString = function() {
+		// Send everything but the acutual translation
+		var queryPrefs = copyObject(getProperties(this));
+		delete queryPrefs.translation;
+		
+		return queryify(queryPrefs);
+	}
 }
 
 
+
+function LocationHandler() {
+	this.coords = {};
+	
+	var getCurrentLocationCallback = function(pos, callback) {
+		this.coords = pos.coords;
+		if(typeof(callback) === "function") { callback(this); }
+	}
+	
+	var getCurrentLocationErrorCallback = function(err) {
+		console.warn("location error (" + err.code + "): " + err.message);
+	}
+	
+	this.getCurrentLocation = function(callback) {
+		window.navigator.geolocation.getCurrentPosition(
+			function(pos) {
+				getCurrentLocationCallback(pos, callback);
+			},
+			getCurrentLocationErrorCallback,
+			{ "timeout": 15000, "maximumAge": 60000 }
+		);
+	}
+}
+
+
+
+function Weather(temperature, conditions, lastUpdate) {
+	this.temperature = valueOrDefault(temperature, -461);
+	this.conditions = valueOrDefault(conditions, 0);
+	this.lastUpdate = valueOrDefault(lastUpdate, 0);
+	
+	this.setFromJsonObject = function(newWeather, updatedAt) {
+		updatedAt = valueOrDefault(updatedAt, new Date());
+		
+		if(typeof(newWeather) !== "undefined") {
+			for(var key in getProperties(this)) {
+				if(typeof(newWeather[key]) !== "undefined") {
+					this[key] = newWeather[key];
+				}
+			}
+		}
+		
+		this.lastUpdate = Math.round(updatedAt.getTime() / 1000);
+	}
+	
+	this.asMessage = function() {
+		var now = new Date();
+		var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
+		var isDay = sunCalc.sunset > now && now > sunCalc.sunrise;
+		
+		return {
+			"temperature": Math.round(weather.temperature * 100),
+			"weatherConditionCode": weather.conditions,
+			"weatherConditionFlags": isDay ? 1 : 0, // TODO: Better flag handling
+			"setWeather": 1
+		};
+	}
+}
+
+function YrNoWeatherProvider() {
+	var convertConditionCode = function(code) {
+		switch(parseInt(code)) {
+			case 6:         //LIGHTRAINTHUNDERSUN
+			case 11:        //RAINTHUNDER
+            case 14:        //SNOWTHUNDER
+            case 20:        //SLEETSUNTHUNDER
+            case 21:        //SNOWSUNTHUNDER
+			case 22:        //LIGHTRAINTHUNDER
+            case 23:        //SLEETTHUNDER
+				return 12;  // -> Thunder icon
+			case 5:         //LIGHTRAINSUN
+			case 9:         //LIGHTRAIN
+				return 5;   // -> Drizzle icon
+			case 10:        //RAIN
+            case 18:        //LIGHTRAINSUN
+				return 6;  // -> Rain icon
+			case 8:         //SNOWSUN
+            case 13:        //SNOW
+			case 19:        //SNOWSUN ( used for winter darkness )
+				return 11; // -> Snow icon
+			case 7:         //SLEETSUN
+			case 12:        //SLEET
+				return 9;  // -> Sleet icon
+			case 15:        //FOG
+				return 4;  // -> Fog
+			case 1:         //SUN
+			case 16:        //SUN ( used for winter darkness )
+				return 1;  // -> Clear icon
+			case 2:         //LIGHTCLOUD
+			case 3:         //PARTLYCLOUD
+			case 17:        //LIGHTCLOUD( winter darkness )
+				return 2;  // -> Partly cloudy icon
+			case 4:         //CLOUD
+				return 3;  // -> Cloudy icon
+		}
+		
+		console.warn("Unknown yr.no weather code: " + code);
+		return 0;
+	}
+	
+	var updateWeatherCallback = function(req, coords) {
+		if(req.status == 200) {
+            xml = req.responseXML.documentElement;
+            if (xml) {
+                var currentSymbolElem = xml.getElementsByTagName("symbol")[0];
+                var weatherCode = currentSymbolElem.attributes[1].value;
+                var temperature = (xml.getElementsByTagName("temperature")[0]).getAttribute("value");
+                var tempKelvin = 273.15 + Number(temperature);
+				var code = convertConditionCode(weatherCode);
+				
+				return {
+					"temperature": tempKelvin,
+					"conditions": code
+				};
+			}
+		}
+		else {
+			console.warn("Error getting weather with OpenWeatherMap (status " + req.status + ")");
+		}
+	}
+	
+	this.updateWeather = function(weather, coords, callback) {
+        var url = "http://api.yr.no/weatherapi/locationforecastlts/1.1/?lat=" + coords.latitude + ";lon=" + coords.longitude;
+		makeRequest(
+			"GET", url,
+			function(req) {
+				weather.setFromJsonObject(updateWeatherCallback(req, coords));
+				if(typeof(callback) === "function") { callback(weather); }
+			}
+		);	
+	}
+}
+
+
+function OpenWeatherMapProvider() {
+	var convertConditionCode = function(code) {
+		switch(parseInt(code)) {
+			case 200:      // Thunderstorm with light rain
+			case 201:      // Thunderstorm with rain
+			case 202:      // Thunderstorm with heavy rain
+			case 210:      // Light thunderstorm
+			case 211:      // Thunderstorm
+			case 212:      // Heavy thunderstorm
+			case 221:      // Ragged thunderstorm
+			case 230:      // Thunderstorm with light drizzle
+			case 231:      // Thunderstorm with drizzle
+			case 232:      // Thunderstorm with heavy drizzle
+			case 900:      // Tornado
+			case 901:      // Tropical storm
+			case 902:      // Hurricane
+			case 960:      // Storm
+			case 961:      // Violent storm
+			case 962:      // Hurricane (again)
+				return 12; // -> Thunder icon
+			case 300:      // Light intensity drizzle
+			case 301:      // Drizzle
+			case 310:      // Light intensity drizzle rain
+			case 311:      // Drizzle rain
+			case 312:      // Heavy intensity drizzle rain
+			case 313:      // Shower rain and drizzle
+			case 314:      // Heavy shower rain and drizzle
+			case 321:      // Shower drizzle
+				return 5;  // -> Drizzle icon
+			case 500:      // Light rain
+			case 501:      // Moderate rain
+			case 502:      // Heavy intensity rain
+			case 503:      // Very heavy rain
+			case 504:      // Extreme rain
+			case 511:      // Freezing rain
+			case 520:      // Light intensity shower rain
+			case 521:      // Shower rain
+			case 522:      // Heavy intensity shower rain
+			case 531:      // Ragged shower rain
+				return 6;  // -> Rain icon
+			case 600:      // Light snow
+			case 601:      // Snow
+			case 602:      // Heavy snow
+				return 11; // -> Snow icon
+			case 611:      // Sleet
+			case 906:      // Hail
+				return 9;  // -> Sleet icon
+			case 612:      // Shower sleet
+				return 7;  // -> Rain and sleet icon
+			case 615:      // Light rain and snow
+			case 616:      // Rain and snow
+			case 620:      // Light shower snow
+			case 621:      // Shower snow
+			case 622:      // Heavy shower snow
+				return 8;  // -> Rain and snow icon
+			case 701:      // Mist
+			case 711:      // Smoke
+			case 721:      // Haze
+			case 731:      // Sand/dust whirls
+			case 741:      // Fog
+			case 751:      // Sand
+			case 761:      // Dust
+			case 762:      // Volcanic ash
+				return 4;  // -> Fog
+			case 771:      // Squalls
+			case 905:      // Windy
+			case 954:      // Moderate breeze
+			case 955:      // Fresh breeze
+			case 956:      // Strong breeze
+			case 957:      // High wind, near gale
+			case 958:      // Gale
+			case 959:      // Severe gale
+				return 13; // -> Wind icon
+			case 800:      // Sky is clear
+			case 950:      // Setting
+			case 951:      // Calm
+			case 952:      // Light breeze
+			case 953:      // Gentle breeze
+				return 1;  // -> Clear icon
+			case 801:      // Few clouds
+			case 802:      // Scattered clouds
+			case 803:      // Broken clouds
+				return 2;  // -> Partly cloudy icon
+			case 804:      // Overcast clouds
+				return 3;  // -> Cloudy icon
+			case 903:      // Cold
+				return 15; // -> Cold icon
+			case 904:      // Hot
+				return 14; // -> Hot icon
+		}
+		
+		console.warn("Unknown OpenWeatherMap weather code: " + code);
+		return 0;
+	}
+	
+	var updateWeatherCallback = function(req, coords) {
+		if(req.status == 200) {
+			var response = JSON.parse(req.responseText);
+			
+			if (response && response.list && response.list.length > 0) {
+				var result = response.list[0];
+				var temperature = result.main.temp;
+				var code = convertConditionCode(result.weather[0].id);
+				
+				return {
+					"temperature": temperature,
+					"conditions": code
+				};
+			}
+		}
+		else {
+			console.warn("Error getting weather with OpenWeatherMap (status " + req.status + ")");
+		}
+	}
+	
+	this.updateWeather = function(weather, coords, callback) {
+		makeRequest(
+			"GET",
+			"http://api.openweathermap.org/data/2.5/find?lat=" +
+			coords.latitude + "&lon=" + coords.longitude + "&cnt=1",
+			function(req) {
+				weather.setFromJsonObject(updateWeatherCallback(req, coords));
+				if(typeof(callback) === "function") { callback(weather); }
+			}
+		);	
+	}
+}
+
+function YahooWeatherProvider() {
+	var convertConditionCode = function(code) {
+		switch(parseInt(code)) {
+			case 0:        // Tornado
+			case 1:        // Tropical storm
+			case 2:        // Hurricane
+			case 3:        // Severe thunderstomrs
+			case 4:        // Thunderstorms
+			case 37:       // Isolated thunderstorms
+			case 38:       // Scattered thunderstorms
+			case 39:       // Scattered thunderstorms (again)
+			case 45:       // Thundershowers
+			case 47:       // Isolated thundershowers
+				return 12; // -> Thunder icon
+			case 5:        // Mixed rain and snow
+				return 8;  // -> Rain and snow icon
+			case 6:        // Mixed rain and sleet
+			case 35:       // Mixed rain and hail
+				return 7;  // -> Rain and sleet icon
+			case 7:        // Mixed snow and sleet
+				return 10; // -> Snow and sleet icon
+			case 8:        // Freezing drizzle
+			case 9:        // Drizzle
+				return 5;  // -> Drizzle icon
+			case 10:       // Freezing rain
+			case 11:       // Showers
+			case 12:       // Showers (again)
+			case 40:       // Scattered showers
+				return 6;  // -> Rain icon
+			case 13:       // Snow flurries
+			case 14:       // Light snow showers
+			case 15:       // Blowing snow
+			case 16:       // Snow
+			case 41:       // Heavy snow
+			case 42:       // Scattered snow showers
+			case 43:       // Heavy snow (again)
+			case 46:       // Snow showers
+				return 11; // -> Snow icon
+			case 17:       // Hail
+			case 18:       // Sleet
+				return 9;  // -> Sleet icon
+			case 19:       // Dust
+			case 20:       // Foggy
+			case 21:       // Haze
+			case 22:       // Smoky
+				return 4;  // -> Fog icon
+			case 23:       // Blustery
+			case 24:       // Windy
+				return 13; // -> Wind icon
+			case 25:       // Cold
+				return 15; // -> Cold icon
+			case 26:       // Cloudy
+				return 3;  // -> Cloudy icon
+			case 27:       // Mostly cloudy (night)
+			case 28:       // Mostly cloudy (day)
+			case 29:       // Partly cloudy (night)
+			case 30:       // Partly cloudy (day)
+			case 44:       // Partly cloudy
+				return 2;  // -> Partly cloudy icon
+			case 31:       // Clear (night)
+			case 32:       // Sunny
+			case 33:       // Fair (night)
+			case 34:       // Fair (day)
+				return 1;  // -> Clear icon
+			case 36:       // Hot
+				return 14; // -> Hot icon
+		}
+		
+		console.warn("Unknown Yahoo Weather weather code: " + code);
+		return 0;
+	}
+	
+	var updateWeatherWithWoeidCallback = function(req, coords) {
+		if (req.status == 200) {
+			var response = JSON.parse(req.responseText);
+			var conditions = response.query.results.channel.item.condition;
+			
+			//Convert to Kelvin
+			var temperature = Number(conditions.temp) + 273.15;
+			var code = convertConditionCode(conditions.code);
+			
+			return {
+				"temperature": temperature,
+				"conditions": code
+			};
+		}
+		else {
+		  console.warn("Error getting weather with Yahoo Weather (status " + req.status + ")");
+		}
+	}
+	
+	var updateWeatherWithWoeid = function(req, weather, coords, callback) {
+		var response = JSON.parse(req.responseText);
+		var woeid = response.query.results.Result.woeid;
+		
+		var query = encodeURI(
+			"select item.condition from weather.forecast where woeid = "
+			+ woeid + ' and u = "c"'
+		);
+		var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
+		
+		makeRequest("GET", url, function(req) {
+			weather.setFromJsonObject(updateWeatherWithWoeidCallback(req, coords));
+			if(typeof(callback) === "function") { callback(weather); }
+		});
+	}
+	
+	var woeidCallback = function(req, weather, coords, callback) {
+		if(req.status == 200) {
+			return updateWeatherWithWoeid(req, weather, coords, callback);
+		}
+		else {
+			console.warn("Error getting Yahoo Weather WOEID (status " + req.status + ")");
+		}
+	}
+	
+	this.updateWeather = function(weather, coords, callback) {
+		var query = encodeURI(
+			'select woeid from geo.placefinder where text=\"'
+			+ coords.latitude + "," + coords.longitude
+			+ '" and gflags="R"'
+		);
+		var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
+		
+		makeRequest("GET", url, function(req) {
+			woeidCallback(req, weather, coords, callback)
+		});
+	}
+}
+
+
+
+function getProperties(obj) {
+	var properties = {};
+	for(var property in obj) {
+		if(obj.hasOwnProperty(property) && typeof(obj[property]) !== "function") {
+			properties[property] = obj[property];
+		}
+	}
+
+	return properties;
+}
+
+function makeRequest(method, url, callback) {
+	var req = new XMLHttpRequest();
+	req.open(method, url, true);
+	req.onload = function(e) {
+		if(req.readyState == 4) { callback(req); }
+	}
+	req.send(null);
+}
+
+function valueOrDefault(value, defaultValue) {
+	return typeof(value) !== "undefined" ? value : defaultValue;
+}
 
 // Encodes string as byte array. Somehow,
-// this actually makes UTF-8 work properly.
+// this actually makes UTF-8 work properly
+// (even though JS uses UTF-16 internally).
 function prepareString(string) {
 	var bytes = [];
 	for(var i = 0; i < string.length; i++) {
 		bytes.push(string[i].charCodeAt(0));
 	}
-	
+
 	bytes.push(0); // Null-terminate
 	return bytes;
 }
 
-
-
 function mergeObjects(a, b) {
-	for(var key in b)
-		a[key] = b[key];
+	for(var key in b) { a[key] = b[key]; }
 	return a;
 }
 
@@ -303,8 +479,6 @@ function copyObject(obj) {
 	return new_obj;
 }
 
-
-
 function queryify(obj) {
 	var queries = [];
 	for(var key in obj) { queries.push(key + "=" + obj[key]) };
@@ -312,31 +486,73 @@ function queryify(obj) {
 }
 
 
-Pebble.addEventListener("ready", function(e) {     
+
+var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
+
+var prefs = new Preferences();
+var weather = new Weather();
+var loc = new LocationHandler();
+
+var providers = {
+	"3": new OpenWeatherMapProvider(),
+	"2": new YahooWeatherProvider(),
+    "1": new YrNoWeatherProvider(),
+	"default": new OpenWeatherMapProvider()
+};
+
+var maxWeatherUpdateFreq = 10 * 60;
+
+
+
+function fetchWeather() {
+    if(Math.round(Date.now()/1000) - weather.lastUpdate >= maxWeatherUpdateFreq) {
+	    loc.getCurrentLocation(fetchWeatherFromLocation);
+    }
+    else {
+        console.warn("Weather update requested too soon; loading from cache (" + (new Date()).toString() + ")");
+        sendWeather(weather);
+    }
+}
+
+function fetchWeatherFromLocation(loc) {
+	var provider = valueOrDefault(
+		providers[prefs.weatherProvider.toString()],
+		providers["default"]
+	);
+	provider.updateWeather(weather, loc.coords, sendWeather);
+}
+
+
+
+function sendWeather(weather) {
+	Pebble.sendAppMessage(weather.asMessage());
+}
+
+function sendPreferences(prefs) {
+	Pebble.sendAppMessage(prefs.asMessage());
+}
+
+
+
+Pebble.addEventListener("ready", function(e) {
     fetchWeather();
 });
 
 Pebble.addEventListener("appmessage", function(e) {
 	if(e.payload["setPrefs"] == 1) {
-		for(var key in prefs)
-			if(e.payload[key] !== "undefined") { prefs[key] = e.payload[key]; }
+		prefs.setFromJsonObject(e.payload)
 	}
 	else if(e.payload["requestWeather"] == 1) {
         fetchWeather();
 	}
 	else {
 		console.warn("Received unknown app message:");
-		for(var key in e.payload)
-			console.log("	 " + key + ": " + e.payload[key]);
+		for(var key in e.payload) { console.log("  " + key + ": " + e.payload[key]); }
 	}
 });
 
-Pebble.addEventListener("showConfiguration", function() {
-	// Send everything but the acutual translation
-	var webPrefs = copyObject(prefs);
-	delete webPrefs.translation;
-	
-	Pebble.openURL(configURL + queryify(webPrefs));
+Pebble.addEventListener("showConfiguration", function() {	
+	Pebble.openURL(configURL + prefs.asQueryString());
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {
@@ -345,15 +561,9 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		// so any provider updates will take effect instantly.
 		// TODO: Only clear when the provider has actually changed
 		weather.lastUpdate = 0;
-	
+		
 		var newPrefs = JSON.parse(e.response);
-		for(var key in prefs) {
-			if(newPrefs[key] !== "undefined")
-				if(key === "translation")
-					prefs[key] = newPrefs[key].join(",");
-				else
-					prefs[key] = parseInt(newPrefs[key]);
-		}
+		prefs.setFromJsonObject(newPrefs);
 		
 		sendPreferences(prefs);
 	}

@@ -10,18 +10,19 @@
 		"watchface": true
 	},
 	"appKeys": {
-		"requestWeather": 1,
-		"setWeather": 2,
-		"temperature": 3,
-		"conditions": 4,
-		"setPrefs": 5,
-		"tempFormat": 6,
-		"weatherUpdateFreq": 7,
-		"statusbar": 8,
-		"weatherOutdatedTime": 9,
-		"weatherProvider": 10,
-		"languageCode": 11,
-		"translation": 12
+		"requestWeather":        1,
+		"setWeather":            2,
+		"temperature":           3,
+		"weatherConditionCode":  4,
+		"weatherConditionFlags": 5,
+		"setPrefs":              6,
+		"tempFormat":            7,
+		"weatherUpdateFreq":     8,
+		"statusbar":             9,
+		"weatherOutdatedTime":   10,
+		"weatherProvider":       11,
+		"languageCode":          12,
+		"translation":           13
 	},
 	"resources": {
 		"media": [

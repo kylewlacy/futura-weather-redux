@@ -9,7 +9,7 @@ void load_preferences();
 void save_preferences();
 void send_preferences();
 
-uint32_t get_resource_for_weather_conditions(uint32_t conditions);
+uint32_t get_resource_for_weather_conditions(WeatherConditions conditions);
 uint32_t get_resource_for_battery_state(BatteryChargeState battery);
 uint32_t get_resource_for_bluetooth_connection(bool connected);
 

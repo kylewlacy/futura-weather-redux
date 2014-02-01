@@ -6,15 +6,20 @@ Weather* weather_load_cache() {
 	static Weather weather = {
 		.last_update_time = 0,
 		.temperature = -46100,  // Below absolute zero in Kelvin, Celsius, Fahrenheit, Rankine, Delisle, Newton, Rèaumur, and Rømer
-		.conditions = 0
+		.conditions = {
+			.code = WEATHER_CONDITIONS_UNAVAILABLE,
+			.flags = WEATHER_CONDITION_FLAGS_NONE
+		}
 	};
 	
 	if(persist_exists(WEATHER_CACHE_LAST_UPDATE_PERSIST_KEY))
 		weather.last_update_time = persist_read_int(WEATHER_CACHE_LAST_UPDATE_PERSIST_KEY);
 	if(persist_exists(WEATHER_CACHE_TEMPERATURE_PERSIST_KEY))
 		weather.temperature = persist_read_int(WEATHER_CACHE_TEMPERATURE_PERSIST_KEY);
-	if(persist_exists(WEATHER_CACHE_CONDITIONS_PERSIST_KEY))
-		weather.conditions = persist_read_int(WEATHER_CACHE_CONDITIONS_PERSIST_KEY);
+	if(persist_exists(WEATHER_CACHE_CONDITION_CODE_PERSIST_KEY))
+		weather.conditions.code = persist_read_int(WEATHER_CACHE_CONDITION_CODE_PERSIST_KEY);
+	if(persist_exists(WEATHER_CACHE_CONDITION_FLAGS_PERSIST_KEY))
+		weather.conditions.flags = persist_read_int(WEATHER_CACHE_CONDITION_FLAGS_PERSIST_KEY);
 	
 	return &weather;
 }
@@ -22,9 +27,10 @@ Weather* weather_load_cache() {
 bool weather_save_cache(Weather *weather) {
 	status_t save_last_update = persist_write_int(WEATHER_CACHE_LAST_UPDATE_PERSIST_KEY, (int)weather->last_update_time);
 	status_t save_temperature = persist_write_int(WEATHER_CACHE_TEMPERATURE_PERSIST_KEY, weather->temperature);
-	status_t save_conditions = persist_write_int(WEATHER_CACHE_CONDITIONS_PERSIST_KEY, weather->conditions);
+	status_t save_condition_code = persist_write_int(WEATHER_CACHE_CONDITION_CODE_PERSIST_KEY, weather->conditions.code);
+	status_t save_condition_flags = persist_write_int(WEATHER_CACHE_CONDITION_FLAGS_PERSIST_KEY, weather->conditions.flags);
 	
-	if(save_last_update < 0 || save_temperature < 0 || save_conditions < 0) {
+	if(save_last_update < 0 || save_temperature < 0 || save_condition_code < 0 || save_condition_flags < 0) {
 		APP_LOG(APP_LOG_LEVEL_WARNING, "Failed to save weather cache");
 		return false;
 	}
@@ -49,12 +55,15 @@ void weather_request_update() {
 }
 
 void weather_set(Weather *weather, DictionaryIterator *iter) {
-	Tuple *conditions = dict_find(iter, WEATHER_CONDITIONS_MSG_KEY);
+	Tuple *condition_code = dict_find(iter, WEATHER_CONDITION_CODE_MSG_KEY);
+	Tuple *condition_flags = dict_find(iter, WEATHER_CONDITION_FLAGS_MSG_KEY);
 	Tuple *temperature = dict_find(iter, WEATHER_TEMPERATURE_MSG_KEY);
 	
-	if(conditions)
-		weather->conditions = conditions->value->int32;
-	if(temperature)
+	if(condition_code != NULL)
+		weather->conditions.code = condition_code->value->int32;
+	if(condition_flags != NULL)
+		weather->conditions.flags = condition_flags->value->int32;
+	if(temperature != NULL)
 		weather->temperature = temperature->value->int32;
 	
 	time_t now = time(NULL);
@@ -65,7 +74,7 @@ void weather_set(Weather *weather, DictionaryIterator *iter) {
 
 
 int weather_convert_temperature(int kelvin_temperature, TempFormat format) {
-	float true_temperature = kelvin_temperature / 100.0f;				// We receive the temperature as an int for simplicity, but *100 to maintain accuracy
+	float true_temperature = kelvin_temperature / 100.0f; // We receive the temperature as an int for simplicity, but ⨉100 to maintain accuracy
 	switch(format) {
 		case TEMP_FORMAT_CELCIUS:
 			return true_temperature - 273.15f;
