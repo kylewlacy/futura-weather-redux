@@ -6,10 +6,10 @@
 Preferences* preferences_load() {
 	static Preferences prefs = {
 		.temp_format = TEMP_FORMAT_CELCIUS,
-		.weather_update_freq = 10*60,
+		.weather_update_freq = 10 * 60,
 		.statusbar = false,
 		.weather_provider = 1,
-		.weather_outdated_time = 60*60,
+		.weather_outdated_time = 60 * 60,
 		.language_code = 0,
 		.translation = "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec,Mon,Tue,Wed,Thu,Fri,Sat,Sun"
 	};

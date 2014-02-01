@@ -23,7 +23,7 @@ function Preferences() {
 	this.asMessage = function() {
 		var prefs = copyObject(getProperties(this));
 		prefs.translation = prepareString(prefs.translation);
-	
+		
 		return mergeObjects(prefs, {"setPrefs": 1});
 	}
 	
@@ -82,26 +82,127 @@ function Weather(temperature, conditions, lastUpdate) {
 		this.lastUpdate = Math.round(updatedAt.getTime() / 1000);
 	}
 	
-	this.asMessage = function(isDay) {
+	this.asMessage = function() {
+		var now = new Date();
+		var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
+		var isDay = sunCalc.sunset > now && now > sunCalc.sunrise;
+		
 		return {
 			"temperature": Math.round(weather.temperature * 100),
-			"conditions": weather.conditions + (weather.isDay ? 1000 : 0),
+			"weatherConditionCode": weather.conditions,
+			"weatherConditionFlags": isDay ? 1 : 0, // TODO: Better flag handling
 			"setWeather": 1
 		};
 	}
 }
 
 function OpenWeatherMapProvider() {
+	var convertConditionCode = function(code) {
+		switch(parseInt(code)) {
+			case 200:      // Thunderstorm with light rain
+			case 201:      // Thunderstorm with rain
+			case 202:      // Thunderstorm with heavy rain
+			case 210:      // Light thunderstorm
+			case 211:      // Thunderstorm
+			case 212:      // Heavy thunderstorm
+			case 221:      // Ragged thunderstorm
+			case 230:      // Thunderstorm with light drizzle
+			case 231:      // Thunderstorm with drizzle
+			case 232:      // Thunderstorm with heavy drizzle
+			case 900:      // Tornado
+			case 901:      // Tropical storm
+			case 902:      // Hurricane
+			case 960:      // Storm
+			case 961:      // Violent storm
+			case 962:      // Hurricane (again)
+				return 12; // -> Thunder icon
+			case 300:      // Light intensity drizzle
+			case 301:      // Drizzle
+			case 310:      // Light intensity drizzle rain
+			case 311:      // Drizzle rain
+			case 312:      // Heavy intensity drizzle rain
+			case 313:      // Shower rain and drizzle
+			case 314:      // Heavy shower rain and drizzle
+			case 321:      // Shower drizzle
+				return 5;  // -> Drizzle icon
+			case 500:      // Light rain
+			case 501:      // Moderate rain
+			case 502:      // Heavy intensity rain
+			case 503:      // Very heavy rain
+			case 504:      // Extreme rain
+			case 511:      // Freezing rain
+			case 520:      // Light intensity shower rain
+			case 521:      // Shower rain
+			case 522:      // Heavy intensity shower rain
+			case 531:      // Ragged shower rain
+				return 6;  // -> Rain icon
+			case 600:      // Light snow
+			case 601:      // Snow
+			case 602:      // Heavy snow
+				return 11; // -> Snow icon
+			case 611:      // Sleet
+			case 906:      // Hail
+				return 9;  // -> Sleet icon
+			case 612:      // Shower sleet
+				return 7;  // -> Rain and sleet icon
+			case 615:      // Light rain and snow
+			case 616:      // Rain and snow
+			case 620:      // Light shower snow
+			case 621:      // Shower snow
+			case 622:      // Heavy shower snow
+				return 8;  // -> Rain and snow icon
+			case 701:      // Mist
+			case 711:      // Smoke
+			case 721:      // Haze
+			case 731:      // Sand/dust whirls
+			case 741:      // Fog
+			case 751:      // Sand
+			case 761:      // Dust
+			case 762:      // Volcanic ash
+				return 4;  // -> Fog
+			case 771:      // Squalls
+			case 905:      // Windy
+			case 954:      // Moderate breeze
+			case 955:      // Fresh breeze
+			case 956:      // Strong breeze
+			case 957:      // High wind, near gale
+			case 958:      // Gale
+			case 959:      // Severe gale
+				return 13; // -> Wind icon
+			case 800:      // Sky is clear
+			case 950:      // Setting
+			case 951:      // Calm
+			case 952:      // Light breeze
+			case 953:      // Gentle breeze
+				return 1;  // -> Clear icon
+			case 801:      // Few clouds
+			case 802:      // Scattered clouds
+			case 803:      // Broken clouds
+				return 2;  // -> Partly cloudy icon
+			case 804:      // Overcast clouds
+				return 3;  // -> Cloudy icon
+			case 903:      // Cold
+				return 15; // -> Cold icon
+			case 904:      // Hot
+				return 14; // -> Hot icon
+		}
+		
+		console.warn("Unknown OpenWeatherMap weather code: " + code);
+		return 0;
+	}
+	
 	var updateWeatherCallback = function(req, coords) {
 		if(req.status == 200) {
 			var response = JSON.parse(req.responseText);
 			
 			if (response && response.list && response.list.length > 0) {
-				var weatherResult = response.list[0];
+				var result = response.list[0];
+				var temperature = result.main.temp;
+				var code = convertConditionCode(result.weather[0].id);
 				
 				return {
-					"temperature": weatherResult.main.temp,
-					"conditions": weatherResult.weather[0].id
+					"temperature": temperature,
+					"conditions": code
 				};
 			}
 		}
@@ -125,73 +226,88 @@ function OpenWeatherMapProvider() {
 
 function YahooWeatherProvider() {
 	var convertConditionCode = function(code) {
-		var conditionMap = {
-		  0  : 900, // Tornado
-		  1  : 901, // Tropical storm
-		  2  : 902, // Hurricane
-		  3  : 212, // Severe thunderstorms
-		  4  : 211, // Thunderstorms
-		  5  : 511, // Mixed rain and snow
-		  6  : 611, // Mixed rain and sleet
-		  7  : 611, // Mixed snow and sleet
-		  8  : 511, // Freezing drizzle
-		  9  : 301, // Drizzle
-		  10 : 511, // Freezing rain
-		  11 : 521, // Showers
-		  12 : 521, // Showers
-		  13 : 601, // Snow flurries
-		  14 : 621, // Light snow showers
-		  15 : 602, // Blowing snow
-		  16 : 602, // Snow
-		  17 : 906, // Hail
-		  18 : 611, // Sleet
-		  19 : 731, // Dust
-		  20 : 741, // Foggy
-		  21 : 721, // Haze
-		  22 : 711, // Smoky
-		  23 : 905, // Blustery
-		  24 : 905, // Windy
-		  25 : 903, // Cold
-		  26 : 802, // Cloudy
-		  27 : 804, // Mostly cloudy (night)
-		  28 : 804, // Mostly cloudy (day)
-		  29 : 801, // Partly cloudy (night)
-		  30 : 801, // Partly cloudy (day)
-		  31 : 800, // Clear (night)
-		  32 : 800, // Sunny
-		  33 : 800, // Fair (night)
-		  34 : 800, // Fair (day)
-		  35 : 906, // Mixed rain and hail
-		  36 : 904, // Hot
-		  37 : 210, // Isolated thunderstorms
-		  38 : 211, // Scattered thunderstorms
-		  39 : 211, // Scattered thunderstorms
-		  40 : 521, // Scattered showers
-		  41 : 602, // Heavy snow
-		  42 : 621, // Scattered snow showers
-		  43 : 602, // Heavy snow
-		  44 : 801, // Partly cloudy
-		  45 : 201, // Thundershowers
-		  46 : 621, // Snow showers
-		  47 : 210, // Isolated thundershowers
-		  3200 : 0, // Not available
-		};
-		return conditionMap[code];
+		switch(parseInt(code)) {
+			case 0:        // Tornado
+			case 1:        // Tropical storm
+			case 2:        // Hurricane
+			case 3:        // Severe thunderstomrs
+			case 4:        // Thunderstorms
+			case 37:       // Isolated thunderstorms
+			case 38:       // Scattered thunderstorms
+			case 39:       // Scattered thunderstorms (again)
+			case 45:       // Thundershowers
+			case 47:       // Isolated thundershowers
+				return 12; // -> Thunder icon
+			case 5:        // Mixed rain and snow
+				return 8;  // -> Rain and snow icon
+			case 6:        // Mixed rain and sleet
+			case 35:       // Mixed rain and hail
+				return 7;  // -> Rain and sleet icon
+			case 7:        // Mixed snow and sleet
+				return 10; // -> Snow and sleet icon
+			case 8:        // Freezing drizzle
+			case 9:        // Drizzle
+				return 5;  // -> Drizzle icon
+			case 10:       // Freezing rain
+			case 11:       // Showers
+			case 12:       // Showers (again)
+			case 40:       // Scattered showers
+				return 6;  // -> Rain icon
+			case 13:       // Snow flurries
+			case 14:       // Light snow showers
+			case 15:       // Blowing snow
+			case 16:       // Snow
+			case 41:       // Heavy snow
+			case 42:       // Scattered snow showers
+			case 43:       // Heavy snow (again)
+			case 46:       // Snow showers
+				return 11; // -> Snow icon
+			case 17:       // Hail
+			case 18:       // Sleet
+				return 9;  // -> Sleet icon
+			case 19:       // Dust
+			case 20:       // Foggy
+			case 21:       // Haze
+			case 22:       // Smoky
+				return 4;  // -> Fog icon
+			case 23:       // Blustery
+			case 24:       // Windy
+				return 13; // -> Wind icon
+			case 25:       // Cold
+				return 15; // -> Cold icon
+			case 26:       // Cloudy
+				return 3;  // -> Cloudy icon
+			case 27:       // Mostly cloudy (night)
+			case 28:       // Mostly cloudy (day)
+			case 29:       // Partly cloudy (night)
+			case 30:       // Partly cloudy (day)
+			case 44:       // Partly cloudy
+				return 2;  // -> Partly cloudy icon
+			case 31:       // Clear (night)
+			case 32:       // Sunny
+			case 33:       // Fair (night)
+			case 34:       // Fair (day)
+				return 1;  // -> Clear icon
+			case 36:       // Hot
+				return 14; // -> Hot icon
+		}
+		
+		console.warn("Unknown Yahoo Weather weather code: " + code);
+		return 0;
 	}
 	
 	var updateWeatherWithWoeidCallback = function(req, coords) {
 		if (req.status == 200) {
 			var response = JSON.parse(req.responseText);
-			var conditions = response.query.results.channel.item.condition.code;
+			var conditions = response.query.results.channel.item.condition;
 			
 			//Convert to Kelvin
-			var temp = Number(conditions.temp) + 273.15;
-			var now = new Date();
-			var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
+			var temperature = Number(conditions.temp) + 273.15;
+			var code = convertConditionCode(conditions.code);
 			
 			return {
-				"temperature": temp,
-				"conditions": convertConditionCode(conditions)
+				"temperature": temperature,
+				"conditions": code
 			};
 		}
 		else {
