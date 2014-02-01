@@ -580,6 +580,10 @@ void handle_bluetooth(bool connected) {
 		layer_mark_dirty(bitmap_layer_get_layer(statusbar_connection_layer));
 		layer_mark_dirty(statusbar_layer);
 	}
+	
+	if(!connected) {
+		vibes_long_pulse();
+	}
 }
 
 
