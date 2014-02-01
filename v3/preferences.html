@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
 	<head>
+		<meta charset="utf8" />
 		<title>Futura Weather Redux Preferences</title>
 		<style type="text/css">
 			body {
@@ -15,7 +16,14 @@
 				margin-bottom: 18px;
 			}
 		</style>
-		<script>			
+		<script>
+			var translations = {};
+			
+			// Called by l10n.js
+			function addLocalizations(localizations) {
+				translations = localizations.translations;
+			}
+			
 			function queryStringParams() {
 				var params = {};
 				var queries = window.location.search.substring(1).split("&");
@@ -27,7 +35,20 @@
 				return params;
 			}
 			
+			function buildLanguagePicker() {
+				var select = document.getElementById("language");
+				for(var key in translations) {
+					var option = document.createElement("option");
+					option.value = key;
+					option.innerHTML = translations[key].name;
+					
+					select.appendChild(option);
+				}
+			}
+			
 			window.onload = function() {
+				buildLanguagePicker();
+				
 				var params = queryStringParams();
 				for(var key in params) {
 					var elements = document.getElementsByName(key);
@@ -47,10 +68,16 @@
 				var children = e.target.childNodes;
 				for(var i = 0; i < children.length; i++) {
 					if(children[i].name && children[i].value) {
-						if(children[i].type == "checkbox")
+						if(children[i].type == "checkbox") {
 							params[children[i].name] = children[i].checked ? 1 : 0;
-						else
+						}
+						else if(children[i].name == "languageCode") {
+							params["translation"] = translations[children[i].value].translation;
+							params[children[i].name] = Number(children[i].value);
+						}
+						else {
 							params[children[i].name] = children[i].value;
+						}
 					}
 				}
 				
@@ -58,6 +85,7 @@
 				return false;
 			}
 		</script>
+		<script type="text/javascript" src="../l10n.js"></script>
 	</head>
 	<body>
 		<h1>Futura Weather Redux</h1>
@@ -67,33 +95,30 @@
 				<option value="1">Celsius</option>
 				<option value="2">Fahrenheit</option>
 			</select>
-			<label for="weatherUpdateFreq">Weather Update Frequency</label>
+			<label for="weatherUpdateFreq">Weather update frequency</label>
 			<select name="weatherUpdateFreq">
 				<option value="600">Every 10 minutes</option>
 				<option value="900">Every 15 minutes</option>
 				<option value="1800">Every 30 minutes</option>
 				<option value="3600">Every hour</option>
 			</select>
-			<label for="provider">Data provider</label>
-			<select name="provider">
-				<option value="1">Open Weather Map</option>
-				<option value="2">Yahoo! Weather</option>
+			<label for="weatherOutdatedTime">Hide outdated weather after:</label>
+			<select name="weatherOutdatedTime">
+				<option value="1800">30 minutes</option>
+				<option value="3600">1 hour</option>
+				<option value="10800">3 hours</option>
 			</select>
-			<label for="language">Language</label>
-			<select name="language">
-				<option value="0">English</option>
-				<option value="1">Svenska</option>
-				<option value="2">Dansk</option>
-				<option value="3">Nederlands</option>
-				<option value="4">Français</option>
-				<option value="5">Suomi</option>
-				<option value="6">Deutsch</option>
-				<option value="7">Italiano</option>
-				<option value="8">Español</option>
-				<option value="9">Norsk</option>
+			<label for="weatherProvider">Weather data provider</label>
+			<select name="weatherProvider">
+				<option value="1">OpenWeatherMap</option>
+				<option value="2">Yahoo Weather</option>
 			</select>
 			<label for="statusbar">Show statusbar</label>
 			<input name="statusbar" type="checkbox" />
+			<label for="languageCode">Language</label>
+			<select name="languageCode" id="language">
+				<!-- Constructed in buildLanguagePicker() -->
+			</select>
 			<button name="save" type="submit">Save</button>
 		</form>
 	</body>
