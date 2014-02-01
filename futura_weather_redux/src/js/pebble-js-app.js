@@ -494,9 +494,9 @@ var weather = new Weather();
 var loc = new LocationHandler();
 
 var providers = {
-	"3": new OpenWeatherMapProvider(),
+	"1": new OpenWeatherMapProvider(),
 	"2": new YahooWeatherProvider(),
-    "1": new YrNoWeatherProvider(),
+    "3": new YrNoWeatherProvider(),
 	"default": new OpenWeatherMapProvider()
 };
 
