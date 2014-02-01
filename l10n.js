@@ -8,7 +8,7 @@ var translations = {
 		]
 	},
 	"1": {
-		"name": "Swedish",
+		"name": "Svenska (Swedish)",
 		"translation": [
 			"Jan", "Feb", "Mar", "Apr", "Maj", "Jun",
 			"Jul", "Aug", "Sep", "Okt", "Nov", "Dec",
@@ -16,7 +16,7 @@ var translations = {
 		]
 	},
 	"2": {
-		"name": "Danish",
+		"name": "Dansk (Danish)",
 		"translation": [
 			"Jan", "Feb", "Mar", "Apr", "Maj", "Jun",
 			"Jul", "Aug", "Sep", "Okt", "Nov", "Dec",
@@ -24,7 +24,7 @@ var translations = {
 		]
 	},
 	"3": {
-		"name": "Dutch",
+		"name": "Nederlands (Dutch)",
 		"translation": [
 			"Jan", "Feb", "Mrt", "Apr", "Mei", "Jun",
 			"Jul", "Aug", "Sep", "Okt", "Nov", "Dec",
@@ -32,7 +32,7 @@ var translations = {
 		]
 	},
 	"4": {
-		"name": "French",
+		"name": "Français (French)",
 		"translation": [
 			"Janv", "Févr", "Mars", "Avril", "Mai", "Juin",
 			"Juil", "Août", "Sept", "Oct",   "Nov", "Déc",
@@ -40,7 +40,7 @@ var translations = {
 		]
 	},
 	"5": {
-		"name": "Finnish",
+		"name": "Suomi (Finnish)",
 		"translation": [
 			"Tammi", "Helmi", "Maalis", "Huhti", "Touko",  "Kesä",
 			"Heinä", "Elo",   "Syys",   "Loka",  "Marras", "Joulu",
@@ -48,7 +48,7 @@ var translations = {
 		]
 	},
 	"6": {
-		"name": "German",
+		"name": "Deutsch (German)",
 		"translation": [
 			"Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
 			"Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
@@ -56,7 +56,7 @@ var translations = {
 		]
 	},
 	"7": {
-		"name": "Italian",
+		"name": "Italiano (Italian)",
 		"translation": [
 			"Gen", "Feb", "Mar", "Apr", "Mag", "Giu",
 			"Lug", "Ago", "Set", "Ott", "Nov", "Dic",
@@ -64,7 +64,7 @@ var translations = {
 		]
 	},
 	"8": {
-		"name": "Spanish",
+		"name": "Español (Spanish)",
 		"translation": [
 			"Ene", "Feb", "Mar", "Abr", "May", "Jun",
 			"Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
