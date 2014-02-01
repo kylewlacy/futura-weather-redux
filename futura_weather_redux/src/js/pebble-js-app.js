@@ -1,233 +1,284 @@
-var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
-
-var prefs = {
-	"tempFormat": 1,
-	"weatherUpdateFreq": 10 * 60,
-	"statusbar": 0,
-	"weatherProvider": 1,
-	"weatherOutdatedTime": 60 * 60,
-	"languageCode": 0,
-	"translation": "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec,Mon,Tue,Wed,Thu,Fri,Sat,Sun"
-};
-
-var weather = {
-	"temperature": -461,
-	"conditions": 0,
-	"lastUpdate": 0
-};
-
-var maxWeatherUpdateFreq = 10 * 60;
-
-var yahooConditionToOpenWeatherMapCondition = {
-  0  : 900, // Tornado
-  1  : 901, // Tropical storm
-  2  : 902, // Hurricane
-  3  : 212, // Severe thunderstorms
-  4  : 211, // Thunderstorms
-  5  : 511, // Mixed rain and snow
-  6  : 611, // Mixed rain and sleet
-  7  : 611, // Mixed snow and sleet
-  8  : 511, // Freezing drizzle
-  9  : 301, // Drizzle
-  10 : 511, // Freezing rain
-  11 : 521, // Showers
-  12 : 521, // Showers
-  13 : 601, // Snow flurries
-  14 : 621, // Light snow showers
-  15 : 602, // Blowing snow
-  16 : 602, // Snow
-  17 : 906, // Hail
-  18 : 611, // Sleet
-  19 : 731, // Dust
-  20 : 741, // Foggy
-  21 : 721, // Haze
-  22 : 711, // Smoky
-  23 : 905, // Blustery
-  24 : 905, // Windy
-  25 : 903, // Cold
-  26 : 802, // Cloudy
-  27 : 804, // Mostly cloudy (night)
-  28 : 804, // Mostly cloudy (day)
-  29 : 801, // Partly cloudy (night)
-  30 : 801, // Partly cloudy (day)
-  31 : 800, // Clear (night)
-  32 : 800, // Sunny
-  33 : 800, // Fair (night)
-  34 : 800, // Fair (day)
-  35 : 906, // Mixed rain and hail
-  36 : 904, // Hot
-  37 : 210, // Isolated thunderstorms
-  38 : 211, // Scattered thunderstorms
-  39 : 211, // Scattered thunderstorms
-  40 : 521, // Scattered showers
-  41 : 602, // Heavy snow
-  42 : 621, // Scattered snow showers
-  43 : 602, // Heavy snow
-  44 : 801, // Partly cloudy
-  45 : 201, // Thundershowers
-  46 : 621, // Snow showers
-  47 : 210, // Isolated thundershowers
-  3200 : 0, // Not available
-};
-
-function fetchWeatherYahoo(coords) {
-    var woeid = -1;
-    var query = encodeURI("select woeid from geo.placefinder where text=\""+coords.latitude+","+coords.longitude + "\" and gflags=\"R\"");
-    var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
-    
-    var response;
-    var req = new XMLHttpRequest();
-    req.open("GET", url, true);
-    req.onload = function(e) {
-        if (req.readyState == 4) {
-            if (req.status == 200) {
-                response = JSON.parse(req.responseText);
-                if (response) {
-                    woeid = response.query.results.Result.woeid;
-                    getWeatherYahooByWoeid(woeid,coords);
-                }
-            } else {
-                console.log("Error");
-            }
-        }
-    }
-    req.send(null);
-}
-
-function getWeatherYahooByWoeid(woeid,coords) {
-  var celsius = 1;
-  var query = encodeURI("select item.condition from weather.forecast where woeid = " + woeid +
-                        " and u = \"c\"");
-  var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
-
-  var response;
-  var req = new XMLHttpRequest();
-  req.open("GET", url, true);
-  req.onload = function(e) {
-    if (req.readyState == 4) {
-      if (req.status == 200) {
-        response = JSON.parse(req.responseText);
-        if (response) {
-          var condition = response.query.results.channel.item.condition;
-          
-          //Convert to Kelvin
-          var temp = Number(condition.temp) + 273.15;
-          var now = new Date();
-          var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
-          
-          sendWeather(weather = {
-              "temperature": temp,
-              "conditions": yahooConditionToOpenWeatherMapCondition[condition.code],
-              "isDay": sunCalc.sunset > now && now > sunCalc.sunrise,
-              "lastUpdate": Math.round(now.getTime() / 1000)
-          });
-        }
-      } else {
-        console.log("Error");
-      }
-    }
-  }
-  req.send(null);
-}
-
-function fetchWeatherOpenWeatherMap(coords) {
-		var response;
-		var req = new XMLHttpRequest();
-		req.open("GET", "http://api.openweathermap.org/data/2.5/find?lat=" + coords.latitude + "&lon=" + coords.longitude + "&cnt=1", true);
-		req.onload = function(e) {
-			if (req.readyState == 4) {
-				if(req.status == 200) {
-					response = JSON.parse(req.responseText);
-					if (response && response.list && response.list.length > 0) {
-						var weatherResult = response.list[0];
-						
-						var now = new Date();
-						var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
-						
-						sendWeather(weather = {
-							"temperature": weatherResult.main.temp,
-							"conditions": weatherResult.weather[0].id,
-							"isDay": sunCalc.sunset > now && now > sunCalc.sunrise,
-							"lastUpdate": Math.round(now.getTime() / 1000)
-						});
-					}
+function Preferences() {
+	this.tempFormat = 1;
+	this.weatherUpdateFreq = 10 * 60;
+	this.statusbar = 0;
+	this.weatherProvider = 1;
+	this.weatherOutdatedTime = 60 * 60;
+	this.languageCode = 0;
+	this.translation = "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec,Mon,Tue,Wed,Thu,Fri,Sat,Sun";
+	
+	this.setFromJsonObject = function(newPrefs) {
+		for(var key in getProperties(this)) {
+			if(typeof(newPrefs[key]) !== "undefined") {
+				if(key === "translation") {
+					this[key] = newPrefs[key].join(",");
 				}
 				else {
-					console.log("Error getting weather info (status " + req.status + ")");
+					this[key] = parseInt(newPrefs[key]);
 				}
 			}
 		}
-		req.send(null);
-}
-
-function fetchWeatherFromPos(pos) {
-    switch (prefs.weatherProvider) {
-        case 1: // OpenWeatherMap
-        default:
-            fetchWeatherOpenWeatherMap(pos.coords);
-            break;
-        case 2: // Yahoo! Weather
-            fetchWeatherYahoo(pos.coords);
-            break;
-    }
-}
-
-function fetchWeather() {
-    if(Math.round(Date.now()/1000) - weather.lastUpdate >= maxWeatherUpdateFreq) {
-        window.navigator.geolocation.getCurrentPosition(fetchWeatherFromPos,
-                locationError,
-                { "timeout": 15000, "maximumAge": 60000 });
-    }
-    else {
-        console.warn("Weather update requested too soon; loading from cache (" + (new Date()).toString() + ")");
-        sendWeather(weather);
-    }
-}
-
-function locationError(err) {
-    console.warn("location error (" + err.code + "): " + err.message);
-    sendWeather({
-        "temperature": 0,
-        "conditions": 0,
-        "isDay": 0,
-        "lastUpdate": Math.round(now.getTime() / 1000)
-    });
-}
-
-
-function sendWeather(weather) {
-	Pebble.sendAppMessage(mergeObjects({
-		"temperature": Math.round(weather.temperature * 100),
-		"conditions": weather.conditions + (weather.isDay ? 1000 : 0)
-	}, {"setWeather": 1}));
-}
-
-function sendPreferences(prefs) {
-	var newPrefs = copyObject(prefs);
-	newPrefs.translation = prepareString(newPrefs.translation);
+	}
 	
-	Pebble.sendAppMessage(mergeObjects(newPrefs, {"setPrefs": 1}));
+	this.asMessage = function() {
+		var prefs = copyObject(getProperties(this));
+		prefs.translation = prepareString(prefs.translation);
+	
+		return mergeObjects(prefs, {"setPrefs": 1});
+	}
+	
+	this.asQueryString = function() {
+		// Send everything but the acutual translation
+		var queryPrefs = copyObject(getProperties(this));
+		delete queryPrefs.translation;
+		
+		return queryify(queryPrefs);
+	}
 }
 
 
+
+function LocationHandler() {
+	this.coords = {};
+	
+	var getCurrentLocationCallback = function(pos, callback) {
+		this.coords = pos.coords;
+		if(typeof(callback) === "function") { callback(this); }
+	}
+	
+	var getCurrentLocationErrorCallback = function(err) {
+		console.warn("location error (" + err.code + "): " + err.message);
+	}
+	
+	this.getCurrentLocation = function(callback) {
+		window.navigator.geolocation.getCurrentPosition(
+			function(pos) {
+				getCurrentLocationCallback(pos, callback);
+			},
+			getCurrentLocationErrorCallback,
+			{ "timeout": 15000, "maximumAge": 60000 }
+		);
+	}
+}
+
+
+
+function Weather(temperature, conditions, lastUpdate) {
+	this.temperature = valueOrDefault(temperature, -461);
+	this.conditions = valueOrDefault(conditions, 0);
+	this.lastUpdate = valueOrDefault(lastUpdate, 0);
+	
+	this.setFromJsonObject = function(newWeather, updatedAt) {
+		updatedAt = valueOrDefault(updatedAt, new Date());
+		
+		if(typeof(newWeather) !== "undefined") {
+			for(var key in getProperties(this)) {
+				if(typeof(newWeather[key]) !== "undefined") {
+					this[key] = newWeather[key];
+				}
+			}
+		}
+		
+		this.lastUpdate = Math.round(updatedAt.getTime() / 1000);
+	}
+	
+	this.asMessage = function(isDay) {
+		return {
+			"temperature": Math.round(weather.temperature * 100),
+			"conditions": weather.conditions + (weather.isDay ? 1000 : 0),
+			"setWeather": 1
+		};
+	}
+}
+
+function OpenWeatherMapProvider() {
+	var updateWeatherCallback = function(req, coords) {
+		if(req.status == 200) {
+			var response = JSON.parse(req.responseText);
+			
+			if (response && response.list && response.list.length > 0) {
+				var weatherResult = response.list[0];
+				
+				return {
+					"temperature": weatherResult.main.temp,
+					"conditions": weatherResult.weather[0].id
+				};
+			}
+		}
+		else {
+			console.warn("Error getting weather with OpenWeatherMap (status " + req.status + ")");
+		}
+	}
+	
+	this.updateWeather = function(weather, coords, callback) {
+		makeRequest(
+			"GET",
+			"http://api.openweathermap.org/data/2.5/find?lat=" +
+			coords.latitude + "&lon=" + coords.longitude + "&cnt=1",
+			function(req) {
+				weather.setFromJsonObject(updateWeatherCallback(req, coords));
+				if(typeof(callback) === "function") { callback(weather); }
+			}
+		);	
+	}
+}
+
+function YahooWeatherProvider() {
+	var convertConditionCode = function(code) {
+		var conditionMap = {
+		  0  : 900, // Tornado
+		  1  : 901, // Tropical storm
+		  2  : 902, // Hurricane
+		  3  : 212, // Severe thunderstorms
+		  4  : 211, // Thunderstorms
+		  5  : 511, // Mixed rain and snow
+		  6  : 611, // Mixed rain and sleet
+		  7  : 611, // Mixed snow and sleet
+		  8  : 511, // Freezing drizzle
+		  9  : 301, // Drizzle
+		  10 : 511, // Freezing rain
+		  11 : 521, // Showers
+		  12 : 521, // Showers
+		  13 : 601, // Snow flurries
+		  14 : 621, // Light snow showers
+		  15 : 602, // Blowing snow
+		  16 : 602, // Snow
+		  17 : 906, // Hail
+		  18 : 611, // Sleet
+		  19 : 731, // Dust
+		  20 : 741, // Foggy
+		  21 : 721, // Haze
+		  22 : 711, // Smoky
+		  23 : 905, // Blustery
+		  24 : 905, // Windy
+		  25 : 903, // Cold
+		  26 : 802, // Cloudy
+		  27 : 804, // Mostly cloudy (night)
+		  28 : 804, // Mostly cloudy (day)
+		  29 : 801, // Partly cloudy (night)
+		  30 : 801, // Partly cloudy (day)
+		  31 : 800, // Clear (night)
+		  32 : 800, // Sunny
+		  33 : 800, // Fair (night)
+		  34 : 800, // Fair (day)
+		  35 : 906, // Mixed rain and hail
+		  36 : 904, // Hot
+		  37 : 210, // Isolated thunderstorms
+		  38 : 211, // Scattered thunderstorms
+		  39 : 211, // Scattered thunderstorms
+		  40 : 521, // Scattered showers
+		  41 : 602, // Heavy snow
+		  42 : 621, // Scattered snow showers
+		  43 : 602, // Heavy snow
+		  44 : 801, // Partly cloudy
+		  45 : 201, // Thundershowers
+		  46 : 621, // Snow showers
+		  47 : 210, // Isolated thundershowers
+		  3200 : 0, // Not available
+		};
+		return conditionMap[code];
+	}
+	
+	var updateWeatherWithWoeidCallback = function(req, coords) {
+		if (req.status == 200) {
+			var response = JSON.parse(req.responseText);
+			var conditions = response.query.results.channel.item.condition.code;
+			
+			//Convert to Kelvin
+			var temp = Number(conditions.temp) + 273.15;
+			var now = new Date();
+			var sunCalc = SunCalc.getTimes(now, coords.latitude, coords.longitude);
+			
+			return {
+				"temperature": temp,
+				"conditions": convertConditionCode(conditions)
+			};
+		}
+		else {
+		  console.warn("Error getting weather with Yahoo Weather (status " + req.status + ")");
+		}
+	}
+	
+	var updateWeatherWithWoeid = function(req, weather, coords, callback) {
+		var response = JSON.parse(req.responseText);
+		var woeid = response.query.results.Result.woeid;
+		
+		var query = encodeURI(
+			"select item.condition from weather.forecast where woeid = "
+			+ woeid + ' and u = "c"'
+		);
+		var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
+		
+		makeRequest("GET", url, function(req) {
+			weather.setFromJsonObject(updateWeatherWithWoeidCallback(req, coords));
+			if(typeof(callback) === "function") { callback(weather); }
+		});
+	}
+	
+	var woeidCallback = function(req, weather, coords, callback) {
+		if(req.status == 200) {
+			return updateWeatherWithWoeid(req, weather, coords, callback);
+		}
+		else {
+			console.warn("Error getting Yahoo Weather WOEID (status " + req.status + ")");
+		}
+	}
+	
+	this.updateWeather = function(weather, coords, callback) {
+		var query = encodeURI(
+			'select woeid from geo.placefinder where text=\"'
+			+ coords.latitude + "," + coords.longitude
+			+ '" and gflags="R"'
+		);
+		var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
+		
+		makeRequest("GET", url, function(req) {
+			woeidCallback(req, weather, coords, callback)
+		});
+	}
+}
+
+
+
+function getProperties(obj) {
+	var properties = {};
+	for(var property in obj) {
+		if(obj.hasOwnProperty(property) && typeof(obj[property]) !== "function") {
+			properties[property] = obj[property];
+		}
+	}
+
+	return properties;
+}
+
+function makeRequest(method, url, callback) {
+	var req = new XMLHttpRequest();
+	req.open(method, url, true);
+	req.onload = function(e) {
+		if(req.readyState == 4) { callback(req); }
+	}
+	req.send(null);
+}
+
+function valueOrDefault(value, defaultValue) {
+	return typeof(value) !== "undefined" ? value : defaultValue;
+}
 
 // Encodes string as byte array. Somehow,
-// this actually makes UTF-8 work properly.
+// this actually makes UTF-8 work properly
+// (even though JS uses UTF-16 internally).
 function prepareString(string) {
 	var bytes = [];
 	for(var i = 0; i < string.length; i++) {
 		bytes.push(string[i].charCodeAt(0));
 	}
-	
+
 	bytes.push(0); // Null-terminate
 	return bytes;
 }
 
-
-
 function mergeObjects(a, b) {
-	for(var key in b)
-		a[key] = b[key];
+	for(var key in b) { a[key] = b[key]; }
 	return a;
 }
 
@@ -237,8 +288,6 @@ function copyObject(obj) {
 	return new_obj;
 }
 
-
-
 function queryify(obj) {
 	var queries = [];
 	for(var key in obj) { queries.push(key + "=" + obj[key]) };
@@ -246,31 +295,72 @@ function queryify(obj) {
 }
 
 
-Pebble.addEventListener("ready", function(e) {     
+
+var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
+
+var prefs = new Preferences();
+var weather = new Weather();
+var location = new LocationHandler();
+
+var providers = {
+	"1": new OpenWeatherMapProvider(),
+	"2": new YahooWeatherProvider(),
+	"default": new OpenWeatherMapProvider()
+};
+
+var maxWeatherUpdateFreq = 10 * 60;
+
+
+
+function fetchWeather() {
+    if(Math.round(Date.now()/1000) - weather.lastUpdate >= maxWeatherUpdateFreq) {
+	    location.getCurrentLocation(fetchWeatherFromLocation);
+    }
+    else {
+        console.warn("Weather update requested too soon; loading from cache (" + (new Date()).toString() + ")");
+        sendWeather(weather);
+    }
+}
+
+function fetchWeatherFromLocation(location) {
+	var provider = valueOrDefault(
+		providers[prefs.weatherProvider.toString()],
+		providers["default"]
+	);
+	provider.updateWeather(weather, location.coords, sendWeather);
+}
+
+
+
+function sendWeather(weather) {
+	Pebble.sendAppMessage(weather.asMessage());
+}
+
+function sendPreferences(prefs) {
+	Pebble.sendAppMessage(prefs.asMessage());
+}
+
+
+
+Pebble.addEventListener("ready", function(e) {
     fetchWeather();
 });
 
 Pebble.addEventListener("appmessage", function(e) {
 	if(e.payload["setPrefs"] == 1) {
-		for(var key in prefs)
-			if(e.payload[key] !== "undefined") { prefs[key] = e.payload[key]; }
+		prefs.setFromJsonObject(e.payload)
 	}
 	else if(e.payload["requestWeather"] == 1) {
         fetchWeather();
 	}
 	else {
 		console.warn("Received unknown app message:");
-		for(var key in e.payload)
-			console.log("	 " + key + ": " + e.payload[key]);
+		for(var key in e.payload) { console.log("  " + key + ": " + e.payload[key]); }
 	}
 });
 
-Pebble.addEventListener("showConfiguration", function() {
-	// Send everything but the acutual translation
-	var webPrefs = copyObject(prefs);
-	delete webPrefs.translation;
-	
-	Pebble.openURL(configURL + queryify(webPrefs));
+Pebble.addEventListener("showConfiguration", function() {	
+	Pebble.openURL(configURL + prefs.asQueryString());
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {
@@ -279,15 +369,9 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		// so any provider updates will take effect instantly.
 		// TODO: Only clear when the provider has actually changed
 		weather.lastUpdate = 0;
-	
+		
 		var newPrefs = JSON.parse(e.response);
-		for(var key in prefs) {
-			if(newPrefs[key] !== "undefined")
-				if(key === "translation")
-					prefs[key] = newPrefs[key].join(",");
-				else
-					prefs[key] = parseInt(newPrefs[key]);
-		}
+		prefs.setFromJsonObject(newPrefs);
 		
 		sendPreferences(prefs);
 	}
