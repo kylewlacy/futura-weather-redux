@@ -112,25 +112,25 @@ function YrNoWeatherProvider() {
 				return 5;   // -> Drizzle icon
 			case 10:        //RAIN
             case 18:        //LIGHTRAINSUN
-				return 6;  // -> Rain icon
+				return 6;   // -> Rain icon
 			case 8:         //SNOWSUN
             case 13:        //SNOW
-			case 19:        //SNOWSUN ( used for winter darkness )
-				return 11; // -> Snow icon
+			case 19:        //SNOWSUN (used for winter darkness)
+				return 11;  // -> Snow icon
 			case 7:         //SLEETSUN
 			case 12:        //SLEET
-				return 9;  // -> Sleet icon
+				return 9;   // -> Sleet icon
 			case 15:        //FOG
-				return 4;  // -> Fog
+				return 4;   // -> Fog
 			case 1:         //SUN
-			case 16:        //SUN ( used for winter darkness )
-				return 1;  // -> Clear icon
+			case 16:        //SUN (used for winter darkness)
+				return 1;   // -> Clear icon
 			case 2:         //LIGHTCLOUD
 			case 3:         //PARTLYCLOUD
-			case 17:        //LIGHTCLOUD( winter darkness )
-				return 2;  // -> Partly cloudy icon
+			case 17:        //LIGHTCLOUD (winter darkness)
+				return 2;   // -> Partly cloudy icon
 			case 4:         //CLOUD
-				return 3;  // -> Cloudy icon
+				return 3;   // -> Cloudy icon
 		}
 		
 		console.warn("Unknown yr.no weather code: " + code);
