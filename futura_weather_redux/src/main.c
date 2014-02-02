@@ -165,7 +165,6 @@ bool has_internet_connection(Weather *weather) {
 	// user likely doesn't have an internet connection (since the
 	// phone should have already responded with new weather info).
 	bool has_internet = !weather_needs_update(weather, prefs->weather_update_freq + 60);
-	APP_LOG(APP_LOG_LEVEL_INFO, "%s internet", has_internet ? "has" : "doesn't have");
 	return has_internet;
 }
 
