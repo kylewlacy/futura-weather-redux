@@ -220,7 +220,7 @@ function OpenWeatherMapProvider() {
 				weather.setFromJsonObject(updateWeatherCallback(req, coords));
 				if(typeof(callback) === "function") { callback(weather); }
 			}
-		);	
+		);
 	}
 }
 

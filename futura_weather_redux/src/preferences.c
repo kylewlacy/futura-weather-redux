@@ -37,14 +37,14 @@ bool preferences_save(Preferences *prefs) {
 	status_t temp_format = persist_write_int(PREF_TEMP_FORMAT_PERSIST_KEY, prefs->temp_format);
 	status_t weather_update_freq = persist_write_int(PREF_WEATHER_UPDATE_FREQ_PERSIST_KEY, (int)prefs->weather_update_freq);
 	status_t statusbar = persist_write_bool(PREF_STATUSBAR_PERSIST_KEY, prefs->statusbar);
-	status_t weather_provider = persist_write_bool(PREF_WEATHER_PROVIDER_PERSIST_KEY, prefs->weather_provider);
+	status_t weather_provider = persist_write_int(PREF_WEATHER_PROVIDER_PERSIST_KEY, prefs->weather_provider);
 	status_t weather_outdated_time = persist_write_int(PREF_WEATHER_OUTDATED_TIME_PERSIST_KEY, (int)prefs->weather_outdated_time);
 	status_t language_code = persist_write_int(PREF_LANGUAGE_CODE_PERSIST_KEY, prefs->language_code);
 	status_t translation = persist_write_string(PREF_TRANSLATION_PERSIST_KEY, prefs->translation);
 	
 	if(
-	   temp_format < 0 || weather_update_freq < 0 || statusbar < 0 || weather_provider < 0 ||
-	   weather_outdated_time < 0 || language_code < 0 || translation < 0
+	   temp_format < 0 || weather_update_freq < 0 || statusbar < 0 || weather_provider < 0
+	   || weather_outdated_time < 0 || language_code < 0 || translation < 0
 	) {
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to save preferences");
 		return false;
