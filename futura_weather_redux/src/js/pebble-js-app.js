@@ -493,14 +493,31 @@ var prefs = new Preferences();
 var weather = new Weather();
 var loc = new LocationHandler();
 
-var providers = {
-	"1": new OpenWeatherMapProvider(),
-	"2": new YahooWeatherProvider(),
-    "3": new YrNoWeatherProvider(),
-	"default": new OpenWeatherMapProvider()
-};
+var providers;
 
 var maxWeatherUpdateFreq = 10 * 60;
+
+
+function buildProviderList() {
+	var list = {
+		"1": new OpenWeatherMapProvider(),
+		"2": new YahooWeatherProvider(),
+		"default": new OpenWeatherMapProvider()
+	};
+	
+	// Determine if XMLHttpRequst can parse XML
+	// (PebbleKit-JS in iOS doesn't seem to be able
+	// to yet)
+	if('responseXML' in (new XMLHttpRequest())) {
+		console.log('supports XML parsing');
+		list["3"] = new YrNoWeatherProvider();
+	}
+	else {
+		console.log('doesn\'t support XML parsing');
+	}
+	
+	return list;
+}
 
 
 
@@ -535,6 +552,7 @@ function sendPreferences(prefs) {
 
 
 Pebble.addEventListener("ready", function(e) {
+	providers = buildProviderList();
     fetchWeather();
 });
 
