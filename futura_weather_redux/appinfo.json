@@ -288,14 +288,19 @@
 				"file": "images/statusbar/plugged-in.png"
 			},
 			{
-				"name": "BLUETOOTH",
+				"name": "BLUETOOTH_INTERNET",
 				"type": "png",
-				"file": "images/statusbar/bluetooth.png"
+				"file": "images/statusbar/bluetooth-internet.png"
 			},
 			{
-				"name": "DISCONNECTED",
+				"name": "BLUETOOTH_NO_INTERNET",
 				"type": "png",
-				"file": "images/statusbar/disconnected.png"
+				"file": "images/statusbar/bluetooth-no-internet.png"
+			},
+			{
+				"name": "NO_BLUETOOTH",
+				"type": "png",
+				"file": "images/statusbar/no-bluetooth.png"
 			}
 		]
 	}

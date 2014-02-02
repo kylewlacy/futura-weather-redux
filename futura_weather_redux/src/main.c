@@ -112,8 +112,10 @@ uint32_t get_resource_for_battery_state(BatteryChargeState battery) {
 	return battery.is_charging ? RESOURCE_ID_CHARGING_0 : RESOURCE_ID_BATTERY_0;
 }
 
-uint32_t get_resource_for_bluetooth_connection(bool connected) {
-	return connected ? RESOURCE_ID_BLUETOOTH : RESOURCE_ID_DISCONNECTED;
+uint32_t get_resource_for_connection(bool bluetooth, bool internet) {
+	if(!bluetooth)
+		return RESOURCE_ID_NO_BLUETOOTH;
+	return internet ? RESOURCE_ID_BLUETOOTH_INTERNET : RESOURCE_ID_BLUETOOTH_NO_INTERNET;
 }
 
 
@@ -154,6 +156,17 @@ GRect get_weather_frame(bool weather_visible) {
 	if(!weather_visible)
 		frame.origin.y = 168; // Pebble screen height
 	return frame;
+}
+
+
+
+bool has_internet_connection(Weather *weather) {
+	// If weather has needed an update for a minute or over, then the
+	// user likely doesn't have an internet connection (since the
+	// phone should have already responded with new weather info).
+	bool has_internet = !weather_needs_update(weather, prefs->weather_update_freq + 60);
+	APP_LOG(APP_LOG_LEVEL_INFO, "%s internet", has_internet ? "has" : "doesn't have");
+	return has_internet;
 }
 
 
@@ -295,6 +308,22 @@ void update_weather_info(Weather *weather, bool animate) {
     }
 }
 
+void update_connection_info(bool bluetooth, bool internet) {
+	uint32_t new_connection_resource = get_resource_for_connection(bluetooth, internet);
+	
+	if(!statusbar_connection_bitmap || new_connection_resource != statusbar_connection_resource) {
+		statusbar_connection_resource = new_connection_resource;
+		
+		if(statusbar_connection_bitmap)
+			gbitmap_destroy(statusbar_connection_bitmap);
+		statusbar_connection_bitmap = gbitmap_create_with_resource(statusbar_connection_resource);
+		bitmap_layer_set_bitmap(statusbar_connection_layer, statusbar_connection_bitmap);
+		
+		layer_mark_dirty(bitmap_layer_get_layer(statusbar_connection_layer));
+		layer_mark_dirty(statusbar_layer);
+	}
+}
+
 
 
 void animation_stopped_handler(Animation *animation, bool finished, void *context) {
@@ -317,6 +346,9 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 	if(set_weather) {
 		weather_set(weather, received);
 		update_weather_info(weather, true);
+		
+		// Receiving weather info means we (probably) have internet!
+		update_connection_info(bluetooth_connection_service_peek(), has_internet_connection(weather));
 	}
 	
 	if(set_preferences) {
@@ -444,7 +476,7 @@ void window_load(Window *window) {
 	statusbar_battery_layer = bitmap_layer_create(GRect(116, 3, 25, 11));
 	layer_add_child(statusbar_layer, bitmap_layer_get_layer(statusbar_battery_layer));
 	
-	statusbar_connection_layer = bitmap_layer_create(GRect(3, 3, 19, 11));
+	statusbar_connection_layer = bitmap_layer_create(GRect(3, 3, 24, 11));
 	layer_add_child(statusbar_layer, bitmap_layer_get_layer(statusbar_connection_layer));
 	
 	layer_add_child(window_layer, statusbar_layer);
@@ -545,10 +577,13 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
     }
     
 	bool outdated = weather_needs_update(weather, prefs->weather_outdated_time);
-    if(outdated || weather_needs_update(weather, prefs->weather_update_freq))
+    if(outdated || weather_needs_update(weather, prefs->weather_update_freq)) {
         weather_request_update();
-	if(outdated)
+	}
+	if(outdated) {
 		set_weather_visible(false, true);
+		update_connection_info(bluetooth_connection_service_peek(), has_internet_connection(weather));
+	}
 }
 
 void handle_battery(BatteryChargeState battery) {
@@ -567,19 +602,7 @@ void handle_battery(BatteryChargeState battery) {
 }
 
 void handle_bluetooth(bool connected) {
-	uint32_t new_connection_resource = get_resource_for_bluetooth_connection(connected);
-	
-	if(!statusbar_connection_bitmap || new_connection_resource != statusbar_connection_resource) {
-		statusbar_connection_resource = new_connection_resource;
-		
-		if(statusbar_connection_bitmap)
-			gbitmap_destroy(statusbar_connection_bitmap);
-		statusbar_connection_bitmap = gbitmap_create_with_resource(statusbar_connection_resource);
-		bitmap_layer_set_bitmap(statusbar_connection_layer, statusbar_connection_bitmap);
-		
-		layer_mark_dirty(bitmap_layer_get_layer(statusbar_connection_layer));
-		layer_mark_dirty(statusbar_layer);
-	}
+	update_connection_info(connected, has_internet_connection(weather));
 	
 	if(!connected) {
 		vibes_long_pulse();
