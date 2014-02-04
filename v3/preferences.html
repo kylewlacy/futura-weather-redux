@@ -34,12 +34,21 @@
 				return params;
 			}
 			
+			// http://stackoverflow.com/a/1354491/1311454
+			function htmlEncode(str) {
+				return decodeURIComponent(escape(str)).replace(/[\u00A0-\u2666]/g, function(c) {
+				   return '&#'+c.charCodeAt(0)+';';
+				});
+			}
+			
 			function buildLanguagePicker() {
 				var select = document.getElementById("language");
 				for(var key in translations) {
 					var option = document.createElement("option");
 					option.value = key;
-					option.innerHTML = translations[key].name;
+					var html = htmlEncode(translations[key].name);
+					console.log(html);
+					option.innerHTML = htmlEncode(translations[key].name);
 					
 					select.appendChild(option);
 				}
