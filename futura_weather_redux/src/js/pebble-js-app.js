@@ -276,9 +276,9 @@ function YahooWeatherProvider() {
 			case 25:       // Cold
 				return 15; // -> Cold icon
 			case 26:       // Cloudy
-				return 3;  // -> Cloudy icon
 			case 27:       // Mostly cloudy (night)
 			case 28:       // Mostly cloudy (day)
+				return 3;  // -> Cloudy icon
 			case 29:       // Partly cloudy (night)
 			case 30:       // Partly cloudy (day)
 			case 44:       // Partly cloudy
