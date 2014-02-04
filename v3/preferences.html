@@ -53,9 +53,32 @@
 					select.appendChild(option);
 				}
 			}
-			
+
+			function populateWeatherList() {
+				var providers = {
+					"1": "OpenWeatherMap", 
+					"2": "Yahoo! Weather",
+					"3": "yr.no",
+				}
+				var params = queryStringParams();
+				if (params != null && params['noxml']==1) {
+					delete providers["3"];
+				}
+				var select = document.getElementById("weatherProvider");
+				for(var key in providers) {
+					var option = document.createElement("option");
+					option.value = key;
+					var html = htmlEncode(providers[key]);
+					console.log(html);
+					option.innerHTML = htmlEncode(providers[key]);
+
+					select.appendChild(option);
+				}
+			}
+
 			window.onload = function() {
 				buildLanguagePicker();
+				populateWeatherList();
 				
 				var params = queryStringParams();
 				for(var key in params) {
@@ -117,10 +140,8 @@
 				<option value="10800">3 hours</option>
 			</select>
 			<label for="weatherProvider">Weather data provider</label>
-			<select name="weatherProvider">
-				<option value="1">OpenWeatherMap</option>
-				<option value="2">Yahoo Weather</option>
-				<option value="3">yr.no</option>
+			<select name="weatherProvider" id="weatherProvider">
+				<!-- Constructed in populateWeatherProvider() -->
 			</select>
 			<label for="statusbar">Show statusbar</label>
 			<input name="statusbar" type="checkbox" />
