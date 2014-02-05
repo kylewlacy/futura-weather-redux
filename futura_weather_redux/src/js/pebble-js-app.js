@@ -12,14 +12,30 @@ function Preferences() {
 			if(typeof(newPrefs[key]) !== "undefined") {
 				if(key === "translation") {
 					this[key] = newPrefs[key].join(",");
+					localStorage.setItem(key, this[key]);
 				}
 				else {
+					localStorage.setItem(key, newPrefs[key]);
 					this[key] = parseInt(newPrefs[key]);
 				}
 			}
 		}
 	}
 	
+	this.loadFromStorage = function() {
+		for(var key in getProperties(this)) {
+			var value = localStorage.getItem(key);
+			if (value != null) {
+				if(key === "translation") {
+					this[key] = localStorage.getItem(key);
+				}
+				else {
+					this[key] = parseInt(localStorage.getItem(key));
+				}
+			}
+		}
+	}
+
 	this.asMessage = function() {
 		var prefs = copyObject(getProperties(this));
 		prefs.translation = prepareString(prefs.translation);
@@ -415,8 +431,9 @@ function queryify(obj) {
 var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
 
 var prefs = new Preferences();
+prefs.loadFromStorage();
 var weather = new Weather();
-var location = new LocationHandler();
+var loc = new LocationHandler();
 
 var providers = {
 	"1": new OpenWeatherMapProvider(),
@@ -430,7 +447,7 @@ var maxWeatherUpdateFreq = 10 * 60;
 
 function fetchWeather() {
     if(Math.round(Date.now()/1000) - weather.lastUpdate >= maxWeatherUpdateFreq) {
-	    location.getCurrentLocation(fetchWeatherFromLocation);
+	    loc.getCurrentLocation(fetchWeatherFromLocation);
     }
     else {
         console.warn("Weather update requested too soon; loading from cache (" + (new Date()).toString() + ")");
@@ -438,12 +455,12 @@ function fetchWeather() {
     }
 }
 
-function fetchWeatherFromLocation(location) {
+function fetchWeatherFromLocation(loc) {
 	var provider = valueOrDefault(
 		providers[prefs.weatherProvider.toString()],
 		providers["default"]
 	);
-	provider.updateWeather(weather, location.coords, sendWeather);
+	provider.updateWeather(weather, loc.coords, sendWeather);
 }
 
 
@@ -463,10 +480,7 @@ Pebble.addEventListener("ready", function(e) {
 });
 
 Pebble.addEventListener("appmessage", function(e) {
-	if(e.payload["setPrefs"] == 1) {
-		prefs.setFromJsonObject(e.payload)
-	}
-	else if(e.payload["requestWeather"] == 1) {
+	if(e.payload["requestWeather"] == 1) {
         fetchWeather();
 	}
 	else {

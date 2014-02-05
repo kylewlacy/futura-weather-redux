@@ -453,8 +453,6 @@ void init() {
 	prefs = preferences_load();
 	weather = weather_load_cache();
 	
-	preferences_send(prefs);
-    
     window_stack_push(window, true);
 }
 
