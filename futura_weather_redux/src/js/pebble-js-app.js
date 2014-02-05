@@ -112,6 +112,81 @@ function Weather(temperature, conditions, lastUpdate) {
 	}
 }
 
+function YrNoWeatherProvider() {
+	var convertConditionCode = function(code) {
+		switch(parseInt(code)) {
+			case 6:         //LIGHTRAINTHUNDERSUN
+			case 11:        //RAINTHUNDER
+            case 14:        //SNOWTHUNDER
+            case 20:        //SLEETSUNTHUNDER
+            case 21:        //SNOWSUNTHUNDER
+			case 22:        //LIGHTRAINTHUNDER
+            case 23:        //SLEETTHUNDER
+				return 12;  // -> Thunder icon
+			case 5:         //LIGHTRAINSUN
+			case 9:         //LIGHTRAIN
+				return 5;   // -> Drizzle icon
+			case 10:        //RAIN
+            case 18:        //LIGHTRAINSUN
+				return 6;  // -> Rain icon
+			case 8:         //SNOWSUN
+            case 13:        //SNOW
+			case 19:        //SNOWSUN ( used for winter darkness )
+				return 11; // -> Snow icon
+			case 7:         //SLEETSUN
+			case 12:        //SLEET
+				return 9;  // -> Sleet icon
+			case 15:        //FOG
+				return 4;  // -> Fog
+			case 1:         //SUN
+			case 16:        //SUN ( used for winter darkness )
+				return 1;  // -> Clear icon
+			case 2:         //LIGHTCLOUD
+			case 3:         //PARTLYCLOUD
+			case 17:        //LIGHTCLOUD( winter darkness )
+				return 2;  // -> Partly cloudy icon
+			case 4:         //CLOUD
+				return 3;  // -> Cloudy icon
+		}
+		
+		console.warn("Unknown yr.no weather code: " + code);
+		return 0;
+	}
+	
+	var updateWeatherCallback = function(req, coords) {
+		if(req.status == 200) {
+            xml = req.responseXML.documentElement;
+            if (xml) {
+                var currentSymbolElem = xml.getElementsByTagName("symbol")[0];
+                var weatherCode = currentSymbolElem.attributes[1].value;
+                var temperature = (xml.getElementsByTagName("temperature")[0]).getAttribute("value");
+                var tempKelvin = 273.15 + Number(temperature);
+				var code = convertConditionCode(weatherCode);
+				
+				return {
+					"temperature": tempKelvin,
+					"conditions": code
+				};
+			}
+		}
+		else {
+			console.warn("Error getting weather with OpenWeatherMap (status " + req.status + ")");
+		}
+	}
+	
+	this.updateWeather = function(weather, coords, callback) {
+        var url = "http://api.yr.no/weatherapi/locationforecastlts/1.1/?lat=" + coords.latitude + ";lon=" + coords.longitude;
+		makeRequest(
+			"GET", url,
+			function(req) {
+				weather.setFromJsonObject(updateWeatherCallback(req, coords));
+				if(typeof(callback) === "function") { callback(weather); }
+			}
+		);	
+	}
+}
+
+
 function OpenWeatherMapProvider() {
 	var convertConditionCode = function(code) {
 		switch(parseInt(code)) {
@@ -438,6 +513,7 @@ var loc = new LocationHandler();
 var providers = {
 	"1": new OpenWeatherMapProvider(),
 	"2": new YahooWeatherProvider(),
+    "3": new YrNoWeatherProvider(),
 	"default": new OpenWeatherMapProvider()
 };
 
