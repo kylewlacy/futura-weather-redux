@@ -125,9 +125,9 @@ function YrNoWeatherProvider() {
 				return 12;  // -> Thunder icon
 			case 5:         //LIGHTRAINSUN
 			case 9:         //LIGHTRAIN
+            case 18:        //LIGHTRAINSUN
 				return 5;   // -> Drizzle icon
 			case 10:        //RAIN
-            case 18:        //LIGHTRAINSUN
 				return 6;   // -> Rain icon
 			case 8:         //SNOWSUN
             case 13:        //SNOW
