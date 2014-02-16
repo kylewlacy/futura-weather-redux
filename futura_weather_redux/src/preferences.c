@@ -2,6 +2,32 @@
 #include "config.h"
 #include "weather.h"
 #include "preferences.h"
+#include <ctype.h>
+
+/* Converts a hex character to its integer value */
+char from_hex(char ch) {
+  return isdigit((int) ch) ? ch - '0' : tolower((int) ch) - 'a' + 10;
+}
+
+char *url_decode(const char *str, char *dst) {
+  const char *pstr = str;
+  char *pbuf = dst;
+  while (*pstr) {
+    if (*pstr == '%') {
+      if (pstr[1] && pstr[2]) {
+        *pbuf++ = from_hex(pstr[1]) << 4 | from_hex(pstr[2]);
+        pstr += 2;
+      }
+    } else if (*pstr == '+') { 
+      *pbuf++ = ' ';
+    } else {
+      *pbuf++ = *pstr;
+    }
+    pstr++;
+  }
+  *pbuf = '\0';
+  return 0;
+}
 
 Preferences* preferences_load() {
 	static Preferences prefs = {
@@ -96,6 +122,7 @@ void preferences_set(Preferences *prefs, DictionaryIterator *iter) {
 		prefs->weather_outdated_time = weather_outdated_time->value->int32;
 	if(language_code != NULL)
 		prefs->language_code = language_code->value->int32;
-	if(translation != NULL)
-		strcpy(prefs->translation, translation->value->cstring);
+	if(translation != NULL) {
+		url_decode(translation->value->cstring, prefs->translation);
+    }
 }
