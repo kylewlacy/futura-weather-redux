@@ -501,13 +501,11 @@ function copyObject(obj) {
 
 function queryify(obj) {
 	var queries = [];
-	for(var key in obj) { queries.push(key + "=" + obj[key]) };
+	for(var key in obj) { queries.push(key + "=" + obj[key]); }
 	return "?" + queries.join("&");
 }
 
-
-
-var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
+var configURL = "http://snaggen.github.io/futura-weather-redux/v3/preferences.html";
 
 var prefs = new Preferences();
 prefs.loadFromStorage();
@@ -569,7 +567,7 @@ Pebble.addEventListener("appmessage", function(e) {
 	}
 });
 
-Pebble.addEventListener("showConfiguration", function() {	
+Pebble.addEventListener("showConfiguration", function() {
 	Pebble.openURL(configURL + prefs.asQueryString());
 });
 
