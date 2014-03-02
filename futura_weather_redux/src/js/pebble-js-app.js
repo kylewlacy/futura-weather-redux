@@ -505,7 +505,7 @@ function queryify(obj) {
 	return "?" + queries.join("&");
 }
 
-var configURL = "http://snaggen.github.io/futura-weather-redux/v3/preferences.html";
+var configURL = "http://kylewlacy.github.io/futura-weather-redux/v3/preferences.html";
 
 var prefs = new Preferences();
 prefs.loadFromStorage();
