@@ -179,8 +179,9 @@ void change_preferences(Preferences *old_prefs, Preferences *new_prefs) {
 	if(old_prefs == NULL || old_prefs->weather_provider != new_prefs->weather_provider) {
 		weather_request_update();
 	}
-	if(old_prefs != NULL && old_prefs->language_code != new_prefs->language_code) {
-		// Update the current date (but not the time)
+	if(old_prefs != NULL) {
+		// Update the current date (but not the time) in case the
+		// current translation changed
 		force_tick(DAY_UNIT | MONTH_UNIT | YEAR_UNIT);
 	}
 	if(old_prefs == NULL || old_prefs->statusbar != new_prefs->statusbar) {

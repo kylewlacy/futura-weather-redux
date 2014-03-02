@@ -22,7 +22,8 @@ int hex_digit_value(char digit) {
 	return (to_lower((int)digit) - 'a') + 10;
 }
 
-// Decodes JavaScript-style (`encodeURIComponent()`) URL encoding
+// Decodes JavaScript-style (`encodeURIComponent()`) URL encoding (used for
+// translations)
 unsigned int url_decode(char const* encoded, char* decoded, size_t decoded_size) {
 	unsigned int i = 0;
 	while(*encoded != 0 && i < decoded_size) {
