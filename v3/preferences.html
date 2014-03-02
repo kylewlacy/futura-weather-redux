@@ -54,10 +54,12 @@
 					var elements = document.getElementsByName(key);
 					if(elements.length > 0) {
 						var e = elements[0];
-						if(e.type == "checkbox")
+						if(e.type == "checkbox") {
 							e.checked = (params[key] != 0);
-						else
+						}
+						else {
 							e.value = params[key];
+						}
 					}
 				}
 			};
@@ -72,8 +74,15 @@
 							params[children[i].name] = children[i].checked ? 1 : 0;
 						}
 						else if(children[i].name == "languageCode") {
-							params["translation"] = translations[children[i].value].translation;
-							params[children[i].name] = Number(children[i].value);
+							var translation = translations[children[i].value].translation;
+							params["translation"] = [];
+							for (var j = 0; j < translation.length; j++) {
+								// Double encoding (then manually decoding the second
+								// pass) fixes an issue with translations on Android
+								params["translation"].push(
+									encodeURIComponent(encodeURIComponent(translation[j]))
+								);
+							}
 						}
 						else {
 							params[children[i].name] = children[i].value;
