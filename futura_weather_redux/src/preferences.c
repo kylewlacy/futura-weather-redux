@@ -2,31 +2,49 @@
 #include "config.h"
 #include "weather.h"
 #include "preferences.h"
-#include <ctype.h>
 
-/* Converts a hex character to its integer value */
-char from_hex(char ch) {
-  return isdigit((int) ch) ? ch - '0' : tolower((int) ch) - 'a' + 10;
+bool is_digit(char c) {
+	return ('0' <= c && c <= '9');
 }
 
-char *url_decode(const char *str, char *dst) {
-  const char *pstr = str;
-  char *pbuf = dst;
-  while (*pstr) {
-    if (*pstr == '%') {
-      if (pstr[1] && pstr[2]) {
-        *pbuf++ = from_hex(pstr[1]) << 4 | from_hex(pstr[2]);
-        pstr += 2;
-      }
-    } else if (*pstr == '+') { 
-      *pbuf++ = ' ';
-    } else {
-      *pbuf++ = *pstr;
-    }
-    pstr++;
-  }
-  *pbuf = '\0';
-  return 0;
+char to_lower(char c) {
+	if('A' <= c && c <= 'Z') {
+		return c + ('a' - 'A');
+	}
+	return c;
+}
+
+
+int hex_digit_value(char digit) {
+	if(is_digit((int)digit)) {
+		return digit - '0';
+	}
+	return (to_lower((int)digit) - 'a') + 10;
+}
+
+// Decodes JavaScript-style (`encodeURIComponent()`) URL encoding
+unsigned int url_decode(char const* encoded, char* decoded, size_t decoded_size) {
+	unsigned int i = 0;
+	while(*encoded != 0 && i < decoded_size) {
+		if(*encoded == '%') {
+			if(*(encoded + 1) != 0 && *(encoded + 2) != 0) {
+				decoded[i] = hex_digit_value(*(encoded + 1)) << 4
+					| hex_digit_value(*(encoded + 2));
+				encoded += 2;
+			}
+		}
+		else if(encoded[0] == '+') {
+			decoded[i] = ' ';
+		}
+		else {
+			decoded[i] = *encoded;
+		}
+		encoded++;
+		i++;
+	}
+	
+	decoded[i] = 0;
+	return i;
 }
 
 Preferences* preferences_load() {
@@ -110,19 +128,29 @@ void preferences_set(Preferences *prefs, DictionaryIterator *iter) {
 	Tuple *language_code = dict_find(iter, LANGUAGE_CODE_MSG_KEY);
 	Tuple *translation = dict_find(iter, TRANSLATION_MSG_KEY);
 	
-	if(temp_format != NULL)
+	if(temp_format != NULL) {
 		prefs->temp_format = temp_format->value->int32;
-	if(weather_update_frequency != NULL)
+	}
+	if(weather_update_frequency != NULL) {
 		prefs->weather_update_freq = weather_update_frequency->value->int32;
-	if(statusbar != NULL)
+	}
+	if(statusbar != NULL) {
 		prefs->statusbar = (statusbar->value->int32 != 0);
-	if(weather_provider != NULL)
+	}
+	if(weather_provider != NULL) {
 		prefs->weather_provider = weather_provider->value->int32;
-	if(weather_outdated_time != NULL)
+	}
+	if(weather_outdated_time != NULL) {
 		prefs->weather_outdated_time = weather_outdated_time->value->int32;
-	if(language_code != NULL)
+	}
+	if(language_code != NULL) {
 		prefs->language_code = language_code->value->int32;
+	}
 	if(translation != NULL) {
-		url_decode(translation->value->cstring, prefs->translation);
+		url_decode(
+			translation->value->cstring,
+			prefs->translation,
+			sizeof(prefs->translation)
+		);
     }
 }
